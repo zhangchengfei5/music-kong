@@ -30,9 +30,28 @@
       </div>
       <!-- E-主题、消息、关闭 -->
     </div>
-
-    <!-- 主体 -->
     <!-- E-顶部导航 -->
+
+    <!-- S-主体部分 -->
+    <div class="home_main_wrapper"></div>
+    <!-- E-主体部分 -->
+
+    <!-- S-底部导航 -->
+    <div class="home_bottom_wrapper">
+      <el-image :src="imgUrl.songImg"></el-image>
+      <div class="song_about">
+        <div class="song_info">
+          <p>晴天</p>
+          <span>&nbsp;-&nbsp;周杰伦</span>
+        </div>
+        <div class="song_action">
+          <el-icon color="#333" :size="20"><star /></el-icon>
+          <el-icon color="#333" :size="20"><download /></el-icon>
+          <el-icon color="#333" :size="20"><more /></el-icon>
+        </div>
+      </div>
+    </div>
+    <!-- E-底部导航 -->
   </div>
 </template>
 
@@ -45,6 +64,9 @@ import {
   Close,
   Setting,
   FullScreen,
+  Star,
+  Download,
+  More,
 } from "@element-plus/icons";
 
 export default {
@@ -56,12 +78,16 @@ export default {
     Close,
     Setting,
     FullScreen,
+    Star,
+    Download,
+    More,
   },
   data() {
     return {
       imgUrl: {
         user: require("../assets/images/topNav/user.png"),
         back: require("../assets/images/topNav/back.png"),
+        songImg: require("../assets/images/bottomNav/songImg.jpg"),
       },
       song: "",
     };
@@ -78,20 +104,23 @@ export default {
 .home_wrapper {
   width: 70vw;
   height: 80vh;
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 0 2px 2px rgba(0, 0, 0, 0.1);
   margin: 0 auto;
   margin-top: 50vh;
   transform: translateY(-50%);
 }
+
 /* 顶部导航 */
 .home_top_wrapper {
   width: 100%;
   height: 10%;
   box-sizing: border-box;
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
   align-items: center;
-  padding: 0.1rem;
+  padding: 0.1rem 0.3rem;
   background-color: #cc66ff;
 }
 /* 登录容器 */
@@ -132,7 +161,7 @@ export default {
 }
 .search_wrapper > .el-input {
   margin: 0 0.1rem;
-  width: 3rem;
+  width: 4rem;
 }
 .search_wrapper .el-input__inner {
   height: 0.3rem;
@@ -153,5 +182,48 @@ export default {
 }
 .close_wrapper > .el-icon:hover {
   color: #fff;
+}
+.home_main_wrapper {
+  flex: 1;
+}
+
+/* 底部导航 */
+.home_bottom_wrapper {
+  width: 100%;
+  height: 12%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding: 0.1rem;
+  background-color: #fff;
+}
+.home_bottom_wrapper > .el-image {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 0.06rem;
+}
+.home_bottom_wrapper .song_about {
+  height: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  /* font-size: 0.16rem; */
+  margin-left: 0.1rem;
+}
+.song_info {
+  display: flex;
+  font-size: 0.16rem;
+}
+.song_info > span {
+  color: #999;
+}
+.song_action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.song_action > .el-icon:hover {
+  color: #999;
+  cursor: pointer;
 }
 </style>
