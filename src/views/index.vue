@@ -1,5 +1,5 @@
 <template>
-  <div>嘀嘀嘀</div>
+  <div>嘀嘀嘀,你说什么呢</div>
 </template>
 
 <script>
