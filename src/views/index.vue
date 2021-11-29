@@ -50,6 +50,21 @@
           <el-icon color="#333" :size="20"><more /></el-icon>
         </div>
       </div>
+      <div class="song_control">
+        <my-progress></my-progress>
+        <div class="song_control_btn">
+          <el-icon color="#666"><caret-left /></el-icon>
+          <el-icon class="btn_pause" v-if="playStatus" color="#666"
+            ><video-pause
+          /></el-icon>
+          <el-icon class="btn_play" v-else color="#666"><video-play /></el-icon>
+          <el-icon color="#666"><caret-right /></el-icon>
+        </div>
+      </div>
+      <div class="song_expand">
+        <i class="iconfont icon-shengyin"></i>
+        <el-icon color="#666"><expand /></el-icon>
+      </div>
     </div>
     <!-- E-底部导航 -->
   </div>
@@ -67,10 +82,17 @@ import {
   Star,
   Download,
   More,
+  CaretLeft,
+  CaretRight,
+  Expand,
+  VideoPlay,
+  VideoPause,
 } from "@element-plus/icons";
+import myProgress from "../components/my-progress.vue";
 
 export default {
   components: {
+    myProgress,
     ArrowLeft,
     Search,
     Microphone,
@@ -81,6 +103,11 @@ export default {
     Star,
     Download,
     More,
+    CaretLeft,
+    CaretRight,
+    Expand,
+    VideoPlay,
+    VideoPause,
   },
   data() {
     return {
@@ -88,8 +115,11 @@ export default {
         user: require("../assets/images/topNav/user.png"),
         back: require("../assets/images/topNav/back.png"),
         songImg: require("../assets/images/bottomNav/songImg.jpg"),
+        play: require("../assets/images/bottomNav/play.png"),
+        stop: require("../assets/images/bottomNav/stop.png"),
       },
       song: "",
+      playStatus: false,
     };
   },
   methods: {
@@ -202,13 +232,15 @@ export default {
   height: 0.7rem;
   border-radius: 0.06rem;
 }
+/* 歌曲相关-名字-歌手-收藏等 */
 .home_bottom_wrapper .song_about {
   height: 0.5rem;
   display: flex;
   flex-direction: column;
   justify-content: space-around;
   /* font-size: 0.16rem; */
-  margin-left: 0.1rem;
+  margin-left: 0.3rem;
+  margin-right: 0.3rem;
 }
 .song_info {
   display: flex;
@@ -225,5 +257,44 @@ export default {
 .song_action > .el-icon:hover {
   color: #999;
   cursor: pointer;
+}
+/* 歌曲控制 */
+.song_control {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.song_control > .progress-wrapper {
+  margin-top: 0.1rem;
+  width: 50%;
+}
+.song_control_btn {
+  display: flex;
+  align-items: center;
+  margin-top: 0.1rem;
+}
+.song_control_btn > .el-icon {
+  font-size: 0.3rem;
+  margin: 0 0.1rem;
+}
+.song_control_btn > .el-icon:hover {
+  color: #999;
+}
+.song_control_btn > .btn_play,
+.song_control_btn > .btn_pause {
+  font-size: 0.35rem;
+}
+.song_expand {
+  display: flex;
+  align-items: center;
+  margin-left: 0.3rem;
+}
+.song_expand > i {
+  font-size: 0.2rem;
+}
+.song_expand > .el-icon {
+  font-size: 0.2rem;
+  margin-left: 0.2rem;
 }
 </style>
