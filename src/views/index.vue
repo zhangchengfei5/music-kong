@@ -38,7 +38,9 @@
 
     <!-- S-底部导航 -->
     <div class="home_bottom_wrapper">
+      <!-- 歌曲封面 -->
       <el-image :src="imgUrl.songImg"></el-image>
+      <!-- 歌曲信息：歌名、歌手、对这首歌收藏 -->
       <div class="song_about">
         <div class="song_info">
           <p>晴天</p>
@@ -50,8 +52,9 @@
           <el-icon color="#333" :size="20"><more /></el-icon>
         </div>
       </div>
+      <!-- 歌曲控制：进度条的拖动、点击；歌曲的播放、暂停 -->
       <div class="song_control">
-        <my-progress></my-progress>
+        <my-progress :precentage="precentAge"></my-progress>
         <div class="song_control_btn">
           <el-icon color="#666"><caret-left /></el-icon>
           <el-icon class="btn_pause" v-if="playStatus" color="#666"
@@ -61,6 +64,7 @@
           <el-icon color="#666"><caret-right /></el-icon>
         </div>
       </div>
+      <!-- 歌曲的待播放列表和声音控制 -->
       <div class="song_expand">
         <i class="iconfont icon-shengyin"></i>
         <el-icon color="#666"><expand /></el-icon>
@@ -120,7 +124,13 @@ export default {
       },
       song: "",
       playStatus: false,
+      precentAge: 50,
     };
+  },
+  mounted() {
+    setTimeout(() => {
+      this.precentAge = 80;
+    }, 2000);
   },
   methods: {
     login() {
@@ -232,6 +242,11 @@ export default {
   height: 0.7rem;
   border-radius: 0.06rem;
 }
+.home_bottom_wrapper .el-icon.el-icon:hover {
+  color: #999;
+  cursor: pointer;
+}
+
 /* 歌曲相关-名字-歌手-收藏等 */
 .home_bottom_wrapper .song_about {
   height: 0.5rem;
@@ -254,10 +269,7 @@ export default {
   justify-content: space-between;
   align-items: center;
 }
-.song_action > .el-icon:hover {
-  color: #999;
-  cursor: pointer;
-}
+
 /* 歌曲控制 */
 .song_control {
   flex: 1;
@@ -265,10 +277,12 @@ export default {
   flex-direction: column;
   align-items: center;
 }
-.song_control > .progress-wrapper {
+/* 进度条 */
+.song_control > .tpbc {
   margin-top: 0.1rem;
   width: 50%;
 }
+/* 播放、暂停、上/下一首 */
 .song_control_btn {
   display: flex;
   align-items: center;
@@ -278,13 +292,15 @@ export default {
   font-size: 0.3rem;
   margin: 0 0.1rem;
 }
-.song_control_btn > .el-icon:hover {
+/* .song_control_btn > .el-icon:hover {
   color: #999;
-}
+} */
 .song_control_btn > .btn_play,
 .song_control_btn > .btn_pause {
   font-size: 0.35rem;
 }
+
+/* 歌曲扩展、播放列表等 */
 .song_expand {
   display: flex;
   align-items: center;
