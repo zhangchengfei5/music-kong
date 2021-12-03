@@ -5,8 +5,9 @@
       <!-- S-登录 -->
       <div class="login_wrapper" @click="login">
         <el-image :src="imgUrl.user"></el-image>
-        <p>登录</p>
+        <p>{{ username }}</p>
       </div>
+      <el-dialog v-model="isLogin" title="登录"> </el-dialog>
       <!-- E-登录 -->
 
       <!-- S-搜索 -->
@@ -33,7 +34,37 @@
     <!-- E-顶部导航 -->
 
     <!-- S-主体部分 -->
-    <div class="home_main_wrapper"></div>
+    <div class="home_main_wrapper">
+      <div class="menu_wrapper">
+        <el-menu
+          default-active="/discover_music"
+          text-color="#666"
+          active-text-color="#000"
+          router
+        >
+          <el-menu-item index="/discover_music">发现音乐</el-menu-item>
+          <el-menu-item index="/boke">播客</el-menu-item>
+          <el-menu-item index="/video">视频</el-menu-item>
+          <el-menu-item index="/friends">朋友</el-menu-item>
+          <el-menu-item index="/living">直播</el-menu-item>
+          <el-menu-item index="/private_fm">私人FM</el-menu-item>
+          <el-menu-item-group title="我的音乐">
+            <el-menu-item index="/local_download">本地与下载</el-menu-item>
+            <el-menu-item index="/last_play">最近播放</el-menu-item>
+            <el-menu-item index="/my_music_cloud">我的音乐云盘</el-menu-item>
+            <el-menu-item index="/my_boke">我的播客</el-menu-item>
+            <el-menu-item index="/my_collections">我的收藏</el-menu-item>
+          </el-menu-item-group>
+          <el-sub-menu index="8">
+            <template #title>
+              <span>创建的歌单</span>
+            </template>
+            <el-menu-item index="/my_favourtie_song">我喜欢的音乐</el-menu-item>
+          </el-sub-menu>
+        </el-menu>
+      </div>
+      <router-view></router-view>
+    </div>
     <!-- E-主体部分 -->
 
     <!-- S-底部导航 -->
@@ -54,14 +85,22 @@
       </div>
       <!-- 歌曲控制：进度条的拖动、点击；歌曲的播放、暂停 -->
       <div class="song_control">
-        <my-progress :precentage="precentAge"></my-progress>
+        <!-- 歌曲进度条 -->
+        <div class="song_duration">
+          <span>00:00</span>
+          <my-progress :precentage="precentAge"></my-progress>
+          <span>4:11</span>
+        </div>
+        <!-- 歌曲播放、暂停等 -->
         <div class="song_control_btn">
+          <i class="iconfont icon-liebiaoxunhuan"></i>
           <el-icon color="#666"><caret-left /></el-icon>
           <el-icon class="btn_pause" v-if="playStatus" color="#666"
             ><video-pause
           /></el-icon>
           <el-icon class="btn_play" v-else color="#666"><video-play /></el-icon>
           <el-icon color="#666"><caret-right /></el-icon>
+          <span>词</span>
         </div>
       </div>
       <!-- 歌曲的待播放列表和声音控制 -->
@@ -93,6 +132,7 @@ import {
   VideoPause,
 } from "@element-plus/icons";
 import myProgress from "../components/my-progress.vue";
+import server from "../utils/http.js";
 
 export default {
   components: {
@@ -122,9 +162,13 @@ export default {
         play: require("../assets/images/bottomNav/play.png"),
         stop: require("../assets/images/bottomNav/stop.png"),
       },
+      username: "登录",
+      isLogin: false,
       song: "",
       playStatus: false,
       precentAge: 50,
+      phone: "15976523669",
+      password: "158735677",
     };
   },
   mounted() {
@@ -135,6 +179,28 @@ export default {
   methods: {
     login() {
       console.log("点击登录");
+      let that = this;
+      let url = "/login/cellphone";
+      var params = {};
+      params.phone = that.phone;
+      params.password = that.password;
+      server
+        .post(url, params)
+        .then((res) => {
+          console.log(res);
+          if (res.status != 200) {
+            that.$toast(res.statusText);
+            return;
+          }
+          let data = res.data;
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("cookie", data.cookie);
+          that.imgUrl.user = data.profile.avatarUrl;
+          that.username = data.profile.nickname;
+        })
+        .catch((err) => {
+          console.log(err);
+        });
     },
   },
 };
@@ -143,6 +209,7 @@ export default {
 <style>
 .home_wrapper {
   width: 70vw;
+  min-width: 7.87rem;
   height: 80vh;
   display: flex;
   flex-direction: column;
@@ -223,8 +290,29 @@ export default {
 .close_wrapper > .el-icon:hover {
   color: #fff;
 }
+
+/* 主体部分 */
 .home_main_wrapper {
   flex: 1;
+  display: flex;
+  overflow: auto;
+}
+/* 左侧菜单 */
+.home_main_wrapper > .menu_wrapper {
+  width: 2rem;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 点击菜单栏字体变大 */
+.el-menu > .el-menu-item.is-active:not(:last-child) {
+  font-weight: bold;
+  font-size: 0.16rem;
+}
+.el-menu-item:hover,
+.el-sub-menu__title:hover {
+  background-color: #f5f5f5;
 }
 
 /* 底部导航 */
@@ -242,7 +330,7 @@ export default {
   height: 0.7rem;
   border-radius: 0.06rem;
 }
-.home_bottom_wrapper .el-icon.el-icon:hover {
+.home_bottom_wrapper .el-icon:hover {
   color: #999;
   cursor: pointer;
 }
@@ -253,7 +341,6 @@ export default {
   display: flex;
   flex-direction: column;
   justify-content: space-around;
-  /* font-size: 0.16rem; */
   margin-left: 0.3rem;
   margin-right: 0.3rem;
 }
@@ -277,27 +364,58 @@ export default {
   flex-direction: column;
   align-items: center;
 }
+
 /* 进度条 */
-.song_control > .tpbc {
+.song_control > .song_duration {
   margin-top: 0.1rem;
   width: 50%;
+  display: flex;
+  align-items: center;
 }
+.song_duration > span {
+  font-size: 0.12rem;
+  color: #999;
+}
+.song_duration > .tpbc {
+  margin: 0 0.1rem;
+}
+
 /* 播放、暂停、上/下一首 */
 .song_control_btn {
   display: flex;
   align-items: center;
   margin-top: 0.1rem;
 }
+.song_control_btn > i {
+  font-size: 0.2rem;
+  color: #666;
+}
+
+.song_control_btn > i:hover {
+  color: #999;
+  cursor: pointer;
+}
+
 .song_control_btn > .el-icon {
   font-size: 0.3rem;
-  margin: 0 0.1rem;
+  margin: 0 0.15rem;
 }
-/* .song_control_btn > .el-icon:hover {
-  color: #999;
-} */
+/* 播放、暂停 */
 .song_control_btn > .btn_play,
 .song_control_btn > .btn_pause {
   font-size: 0.35rem;
+  margin: 0;
+}
+
+.song_control_btn > span {
+  color: #666;
+  font-size: 0.16rem;
+  line-height: 0.3rem;
+}
+
+.song_control_btn > span:hover {
+  color: #999;
+  cursor: pointer;
 }
 
 /* 歌曲扩展、播放列表等 */

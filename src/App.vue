@@ -8,7 +8,9 @@
 .all_wrapper {
   width: 100%;
   height: 100vh;
-  overflow: hidden;
+  /* overflow: hidden; */
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 .all_wrapper::before {
   content: "";
