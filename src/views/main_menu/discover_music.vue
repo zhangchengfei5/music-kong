@@ -2,7 +2,7 @@
   <div class="discover_music_wrapper">
     <el-tabs v-model="activeName">
       <el-tab-pane label="个性推荐" name="1">
-        <el-carousel type="card" :initial-index="1" :interval="5000">
+        <el-carousel type="card" :interval="5000">
           <el-carousel-item
             v-for="(item, index) in bannerList"
             :key="index"
@@ -43,10 +43,12 @@ export default {
     return {
       activeName: "1",
       bannerList: [],
+      recommendSongList: [],
     };
   },
   mounted() {
     this.getBanner();
+    this.getRecommendSongList();
   },
   methods: {
     getBanner() {
@@ -63,9 +65,25 @@ export default {
       var params = {};
       server
         .get(url, params)
-        .then((response) => {
-          this.bannerList = response.data.banners;
-          console.log(response);
+        .then((res) => {
+          if (res.code == 200) {
+            this.bannerList = res.banners;
+            console.log(res);
+          }
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    },
+    getRecommendSongList() {
+      let url = "/recommend/resource";
+      var params = {};
+      // params.cookie = sessionStorage.getItem("cookie");
+      server
+        .post(url, params)
+        .then((res) => {
+          this.recommendSongList = res.recommend;
+          console.log("推荐歌单：", res);
         })
         .catch((error) => {
           console.log(error);

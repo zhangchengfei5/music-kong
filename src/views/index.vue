@@ -1,13 +1,41 @@
 <template>
   <div class="home_wrapper">
+    <!-- 登录Dialog -->
+    <el-dialog v-model="isLogin" center>
+      <span class="title">登录</span>
+      <!-- 表单 -->
+      <el-form :model="form" ref="form" :rules="rules" label-width="0.75rem">
+        <!-- 手机号 -->
+        <el-form-item label="手机号 :" prop="phone">
+          <el-input
+            v-model="form.phone"
+            type="tel"
+            placeholder="请输入手机号"
+            @keyup.enter="login"
+          ></el-input>
+        </el-form-item>
+        <!-- 密码 -->
+        <el-form-item label="密码 :" prop="password">
+          <el-input
+            v-model="form.password"
+            type="password"
+            placeholder="请输入密码"
+            show-password
+            @keyup.enter="login"
+          ></el-input>
+        </el-form-item>
+      </el-form>
+      <!-- 登录按钮 -->
+      <el-button type="primary" plain @click="login">登录</el-button>
+    </el-dialog>
+
     <!-- S-顶部导航 -->
     <div class="home_top_wrapper">
       <!-- S-登录 -->
-      <div class="login_wrapper" @click="login">
+      <div class="login_wrapper" @click="isLogin = true">
         <el-image :src="imgUrl.user"></el-image>
         <p>{{ username }}</p>
       </div>
-      <el-dialog v-model="isLogin" title="登录"> </el-dialog>
       <!-- E-登录 -->
 
       <!-- S-搜索 -->
@@ -162,41 +190,121 @@ export default {
         play: require("../assets/images/bottomNav/play.png"),
         stop: require("../assets/images/bottomNav/stop.png"),
       },
+      // 表单数据
+      form: {
+        // phone: "",
+        // password: "",
+        phone: "15976523669",
+        password: "158735677",
+      },
+      // 表单验证规则
+      rules: {
+        // 手机验证
+        phone: [
+          { required: true, message: "手机号不能为空", trigger: "change" },
+          { min: 11, max: 11, message: "请输入正确的手机号", trigger: "blur" },
+        ],
+        // 密码不能为空
+        password: [
+          {
+            required: true,
+            message: "密码不能为空",
+            trigger: "change",
+          },
+        ],
+      },
       username: "登录",
       isLogin: false,
       song: "",
+      // 播放状态 true为播放中显示暂停按钮，false为暂停中显示播放按钮
       playStatus: false,
       precentAge: 50,
-      phone: "15976523669",
-      password: "158735677",
     };
   },
   mounted() {
     setTimeout(() => {
       this.precentAge = 80;
     }, 2000);
+    let loginStatus = sessionStorage.getItem("loginStatus");
+    if (loginStatus) {
+      let user = sessionStorage.getItem("profile");
+      if (Object.keys(user).length > 0) {
+        this.username = user.nickname;
+        this.imgUrl.user = user.avatarUrl;
+      }
+    }
   },
   methods: {
-    login() {
-      console.log("点击登录");
+    recommend() {
       let that = this;
-      let url = "/login/cellphone";
+      let url = "/recommend/resource";
       var params = {};
-      params.phone = that.phone;
-      params.password = that.password;
+      params.phone = that.form.phone;
+      params.password = that.form.password;
       server
         .post(url, params)
         .then((res) => {
           console.log(res);
-          if (res.status != 200) {
-            that.$toast(res.statusText);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+
+    // 登录
+    login() {
+      console.log("点击登录");
+      let that = this;
+      if (!that.form.phone) {
+        this.$message({
+          message: "手机号不能为空",
+          type: "warning",
+          duration: 1500,
+        });
+        console.log("手机号不能为空");
+        return;
+      } else {
+        let r = new RegExp(/^1[34578][0-9]{9}$/);
+        let a = r.test(that.form.phone);
+        if (!a) {
+          this.$message({
+            message: "请输入正确的手机号码",
+            type: "warning",
+            duration: 1500,
+          });
+          return;
+        }
+      }
+      if (!that.form.password) {
+        this.$message({
+          message: "密码不能为空",
+          type: "warning",
+          duration: 1500,
+        });
+        console.log("密码不能为空");
+        return;
+      }
+      that.isLogin = false;
+      let url = "/login/cellphone";
+      var params = {};
+      params.phone = that.form.phone;
+      params.password = that.form.password;
+      server
+        .post(url, params)
+        .then((res) => {
+          console.log(res);
+          if (res.code != 200) {
+            that.$message({
+              message: "登录失败，请稍后重试",
+            });
             return;
           }
-          let data = res.data;
-          localStorage.setItem("token", data.token);
-          localStorage.setItem("cookie", data.cookie);
-          that.imgUrl.user = data.profile.avatarUrl;
-          that.username = data.profile.nickname;
+          // 判断是否登录了
+          sessionStorage.setItem("loginStatus", true);
+          sessionStorage.setItem("cookie", res.cookie);
+          sessionStorage.setItem("profile", res.profile);
+          that.imgUrl.user = res.profile.avatarUrl;
+          that.username = res.profile.nickname;
         })
         .catch((err) => {
           console.log(err);
@@ -217,6 +325,49 @@ export default {
   margin: 0 auto;
   margin-top: 50vh;
   transform: translateY(-50%);
+}
+
+/* 登录Dialog */
+.el-dialog {
+  font-size: 0.14rem;
+  width: 40%;
+}
+.el-dialog .el-dialog__body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+/* 登录标题 */
+.el-dialog .title {
+  font-size: 0.3rem;
+  font-weight: bold;
+  margin-bottom: 0.2rem;
+  background: linear-gradient(
+    to bottom right,
+    #8080ff,
+    #bb33ff,
+    #cc66ff,
+    #8080ff,
+    #dd99ff
+  );
+  background-clip: text;
+  color: transparent;
+}
+.el-dialog .el-form {
+  width: 100%;
+}
+/* 登录按钮 */
+.el-dialog .el-button--primary.is-plain {
+  background-color: #f6e5ff;
+  border-color: #e5b3ff;
+}
+.el-dialog .el-button--primary {
+  --el-button-background-color: #cc66ff;
+  --el-button-border-color: #cc66ff;
+  --el-button-hover-color: #dd99ff;
+  --el-button-active-font-color: #e6e6e6;
+  --el-button-active-background-color: #bb33ff;
+  --el-button-active-border-color: #bb33ff;
 }
 
 /* 顶部导航 */
