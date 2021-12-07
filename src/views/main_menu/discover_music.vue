@@ -21,7 +21,10 @@
         <div class="recommend_song_wrapper">
           <!-- 推荐歌单大标题 -->
           <div class="recommend_song_title">
-            推荐歌单 <el-icon color="#666" :size="22"><arrow-right /></el-icon>
+            <p>
+              推荐歌单
+              <el-icon color="#666" :size="22"><arrow-right /></el-icon>
+            </p>
           </div>
           <!-- 推荐歌单列表容器 -->
           <div class="song_list_wrapper">
@@ -48,7 +51,10 @@
         <div class="privatecontent_wrapper">
           <!-- 独家放送大标题 -->
           <div class="privatecontent_title">
-            独家放送 <el-icon color="#666" :size="22"><arrow-right /></el-icon>
+            <p>
+              独家放送
+              <el-icon color="#666" :size="22"><arrow-right /></el-icon>
+            </p>
           </div>
           <!-- 独家放送列表个体容器 -->
           <div class="privatecontent_list_wrapper">
@@ -243,14 +249,17 @@ export default {
 /* 推荐歌单大标题、独家放送大标题  */
 .recommend_song_wrapper .recommend_song_title,
 .privatecontent_wrapper .privatecontent_title {
-  display: flex;
-  align-items: center;
   font-size: 0.24rem;
   font-weight: bold;
   margin-bottom: 0.1rem;
 }
-.recommend_song_wrapper .recommend_song_title:hover,
-.privatecontent_wrapper .privatecontent_title:hover {
+.recommend_song_title > p,
+.privatecontent_title > p {
+  display: flex;
+  align-items: center;
+}
+.recommend_song_wrapper .recommend_song_title > p:hover,
+.privatecontent_wrapper .privatecontent_title > p:hover {
   cursor: pointer;
   color: #303133;
 }
@@ -275,7 +284,8 @@ export default {
   border-radius: 0.06rem;
   margin-bottom: 0.1rem;
 }
-.song_list > .el-image:hover，.privatecontent_list > .el-image:hover {
+.song_list > .el-image:hover,
+.privatecontent_list > .el-image:hover {
   cursor: pointer;
 }
 /* 歌单名字、独家放送个体名字 */
@@ -302,7 +312,7 @@ export default {
   color: transparent;
   transition: all 0.5s;
 }
-.song_list .el-image:hover + .song_play_btn {
+.song_list > .el-image:hover + .song_play_btn {
   color: #fff;
   background-color: rgba(0, 0, 0, 0.05);
 }
@@ -340,7 +350,17 @@ export default {
   flex-direction: column;
   position: relative;
 }
+/* 图片右下角的播放按钮 */
 .privatecontent_list .plsp_btn {
   position: absolute;
+  font-size: 0.3rem;
+  top: 0.05rem;
+  left: 0.05rem;
+  color: #fff;
+  background-color: rgba(0, 0, 0, 0.05);
 }
+/* .privatecontent_list > .el-image:hover + .plsp_btn {
+  color: #fff;
+  background-color: rgba(0, 0, 0, 0.05);
+} */
 </style>
