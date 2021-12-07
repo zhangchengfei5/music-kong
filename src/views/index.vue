@@ -32,7 +32,7 @@
     <!-- S-顶部导航 -->
     <div class="home_top_wrapper">
       <!-- S-登录 -->
-      <div class="login_wrapper" @click="isLogin = true">
+      <div class="login_wrapper" @click="isShowLogin">
         <el-image :src="imgUrl.user"></el-image>
         <p>{{ username }}</p>
       </div>
@@ -227,7 +227,7 @@ export default {
     }, 2000);
     let loginStatus = sessionStorage.getItem("loginStatus");
     if (loginStatus) {
-      let user = sessionStorage.getItem("profile");
+      let user = JSON.parse(sessionStorage.getItem("profile"));
       if (Object.keys(user).length > 0) {
         this.username = user.nickname;
         this.imgUrl.user = user.avatarUrl;
@@ -235,22 +235,6 @@ export default {
     }
   },
   methods: {
-    recommend() {
-      let that = this;
-      let url = "/recommend/resource";
-      var params = {};
-      params.phone = that.form.phone;
-      params.password = that.form.password;
-      server
-        .post(url, params)
-        .then((res) => {
-          console.log(res);
-        })
-        .catch((err) => {
-          console.log(err);
-        });
-    },
-
     // 登录
     login() {
       console.log("点击登录");
@@ -292,7 +276,6 @@ export default {
       server
         .post(url, params)
         .then((res) => {
-          console.log(res);
           if (res.code != 200) {
             that.$message({
               message: "登录失败，请稍后重试",
@@ -302,7 +285,8 @@ export default {
           // 判断是否登录了
           sessionStorage.setItem("loginStatus", true);
           sessionStorage.setItem("cookie", res.cookie);
-          sessionStorage.setItem("profile", res.profile);
+          sessionStorage.setItem("profile", JSON.stringify(res.profile));
+          sessionStorage.setItem("uid", res.account.id);
           that.imgUrl.user = res.profile.avatarUrl;
           that.username = res.profile.nickname;
         })
@@ -310,14 +294,24 @@ export default {
           console.log(err);
         });
     },
+    // 点击登录文字后
+    isShowLogin() {
+      let loginStatus = sessionStorage.getItem("loginStatus");
+      if (loginStatus) {
+        this.isLogin = false;
+      } else {
+        this.isLogin = true;
+      }
+      // this.isLogin = true;
+    },
   },
 };
 </script>
 
-<style>
+<style scoped>
 .home_wrapper {
   width: 70vw;
-  min-width: 7.87rem;
+  min-width: 12.64rem;
   height: 80vh;
   display: flex;
   flex-direction: column;
@@ -332,7 +326,7 @@ export default {
   font-size: 0.14rem;
   width: 40%;
 }
-.el-dialog .el-dialog__body {
+.home_wrapper >>> .el-dialog--center .el-dialog__body {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -360,6 +354,10 @@ export default {
 .el-dialog .el-button--primary.is-plain {
   background-color: #f6e5ff;
   border-color: #e5b3ff;
+}
+.el-button--primary.is-plain:focus,
+.el-button--primary.is-plain:hover {
+  color: #dd99ff;
 }
 .el-dialog .el-button--primary {
   --el-button-background-color: #cc66ff;
@@ -397,8 +395,8 @@ export default {
 }
 /* 头像 */
 .login_wrapper .el-image {
-  width: 0.3rem;
-  height: 0.3rem;
+  width: 0.5rem;
+  height: 0.5rem;
   border-radius: 50%;
 }
 .login_wrapper .el-image__inner {
@@ -426,7 +424,7 @@ export default {
   min-height: 30px;
   line-height: 0.3rem;
 }
-.search_wrapper .el-input__inner:focus {
+.search_wrapper >>> .el-input__inner:focus {
   border-color: #cc66ff;
 }
 /* 顶部右边 */
@@ -446,7 +444,7 @@ export default {
 .home_main_wrapper {
   flex: 1;
   display: flex;
-  overflow: auto;
+  overflow-y: auto;
 }
 /* 左侧菜单 */
 .home_main_wrapper > .menu_wrapper {
@@ -454,6 +452,13 @@ export default {
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
+  /* 隐藏滚动条 */
+  scrollbar-width: none; /* firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+/* 隐藏滚动条 */
+.menu_wrapper::-webkit-scrollbar {
+  display: none;
 }
 
 /* 点击菜单栏字体变大 */
@@ -473,12 +478,12 @@ export default {
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  padding: 0.1rem;
+  padding: 0.1rem 0.2rem;
   background-color: #fff;
 }
 .home_bottom_wrapper > .el-image {
-  width: 0.7rem;
-  height: 0.7rem;
+  width: 0.6rem;
+  height: 0.6rem;
   border-radius: 0.06rem;
 }
 .home_bottom_wrapper .el-icon:hover {

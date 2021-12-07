@@ -19,5 +19,13 @@
 1.判断怎么才算登录了————登录成功后会返回一个登录状态标识，把他存储到sessionStorage里
 2.之后调用需要登录才能调的接口的话，每次都把token传上去，验证登录状态
 
-解决：仔细看了看文档才知道,完成登录后 , 会在浏览器保存一个 Cookies 用作登录凭证 , 大部分 API 都需要用到这个 Cookies,非跨域情况请求会自动带上 Cookies
-登录接口返回内容新增cookie字段,保存到本地后,get请求带上?cookie=xxx (先使用encodeURIComponent()编码cookie值)或者post请求body带上cookie即可
+解决：仔细看了看文档才知道,完成登录后 , 会在浏览器保存一个 Cookies 用作登录凭证 , 大部分 API 都需要用到这个 Cookies,非跨域情况请求会自动带上
+Cookies 登录接口返回内容新增cookie字段,保存到本地后,get请求带上?cookie=xxx (先使用encodeURIComponent()编码cookie值)或者post请求body 带上
+cookie即可
+
+5.发现音乐页面的标签要固定在右边内容区的顶部
+问题：发现音乐页面的Tab标签要固定在页面的顶部，使用fixed定位，但是这是相对于视口来说的，宽度百分百后是视口的宽度；实际只是需要内容区的宽度百分
+百，而不是视口的百分百。(直接使用width:百分百，但是又不调整left的话宽度我超出父容器)
+
+解决：在标签的最外层容器中使用position:fixed，然后left:(菜单区的宽度+内容区的左内边距),right:0即可达到和内容区的内容左对齐，至于top则是根据
+顶部导航调整即可
