@@ -225,9 +225,11 @@ export default {
     setTimeout(() => {
       this.precentAge = 80;
     }, 2000);
+    // 判断是否登录了，如果登陆了就直接赋值用户名和头像
     let loginStatus = sessionStorage.getItem("loginStatus");
     if (loginStatus) {
       let user = JSON.parse(sessionStorage.getItem("profile"));
+      // 判断user里是否有属性，如果有就是不为空可以赋值
       if (Object.keys(user).length > 0) {
         this.username = user.nickname;
         this.imgUrl.user = user.avatarUrl;

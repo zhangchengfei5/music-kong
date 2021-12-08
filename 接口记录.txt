@@ -1,0 +1,13 @@
+1.获取用户歌单
+接口地址 : /user/playlist
+id 是歌单ID
+userId 是创建者ID
+name 是歌单名字
+createTime 是歌单创建时间
+playCount 是歌单播放量
+trackCount 是歌单的歌曲数量
+subscribedCount 是歌单收藏数量
+description 是歌单简介 没有则为null
+tags 是歌单标签 没有则为[]
+creator 是歌单创建者信息
+creator.nickname 是歌单创建者名字

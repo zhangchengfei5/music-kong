@@ -43,7 +43,7 @@ instance.interceptors.response.use(
   }
 );
 
-const get = function (url, params) {
+const get = function (url, params = {}) {
   return instance({
     url: url,
     method: "get",
@@ -51,7 +51,7 @@ const get = function (url, params) {
   });
 };
 
-const post = function (url, params) {
+const post = function (url, params = {}) {
   return instance({
     url: url,
     method: "post",

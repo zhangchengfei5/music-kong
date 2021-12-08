@@ -21,7 +21,7 @@
         <div class="recommend_song_wrapper">
           <!-- 推荐歌单大标题 -->
           <div class="recommend_song_title">
-            <p>
+            <p @click="toRecommendSongList">
               推荐歌单
               <el-icon color="#666" :size="22"><arrow-right /></el-icon>
             </p>
@@ -56,8 +56,9 @@
               <el-icon color="#666" :size="22"><arrow-right /></el-icon>
             </p>
           </div>
-          <!-- 独家放送列表个体容器 -->
+          <!-- 独家放送列表容器 -->
           <div class="privatecontent_list_wrapper">
+            <!-- 独家放送个体容器 -->
             <div
               class="privatecontent_list"
               v-for="pclItem in privatecontentList"
@@ -70,9 +71,53 @@
           </div>
         </div>
         <!-- E-独家放送列表入口 -->
+
+        <!-- S-推荐MV外层容器 -->
+        <div class="recommend_mv_wrapper">
+          <!-- 推荐MV大标题 -->
+          <div class="recommend_mv_title">
+            <p>
+              推荐MV
+              <el-icon color="#666" :size="22"><arrow-right /></el-icon>
+            </p>
+          </div>
+          <!-- 推荐MV列表容器 -->
+          <div class="recommend_mv_list_wrapper">
+            <!-- 推荐MV个体容器 -->
+            <div
+              class="recommend_mv_list"
+              v-for="mvItem in recommendMvList"
+              :key="mvItem.id"
+            >
+              <el-image :src="mvItem.picUrl"></el-image>
+              <p class="mv_list_title">{{ mvItem.name }}</p>
+              <div class="mv_list_artistName">
+                <p
+                  v-for="(artists, artistsIndex) in mvItem.artists"
+                  :key="artists.id"
+                >
+                  {{ artists.name
+                  }}{{
+                    mvItem.artists.length > 1
+                      ? artistsIndex == mvItem.artists.length - 1
+                        ? ""
+                        : " /&nbsp;"
+                      : ""
+                  }}
+                </p>
+              </div>
+              <div class="mv_play_count">
+                <el-icon class="list_play_icon" color="#fff"
+                  ><video-play
+                /></el-icon>
+                {{ playCount(mvItem.playCount) }}
+              </div>
+            </div>
+          </div>
+        </div>
       </el-tab-pane>
       <el-tab-pane label="专属定制" name="2">专属定制</el-tab-pane>
-      <el-tab-pane label="歌单" name="3">歌单</el-tab-pane>
+      <el-tab-pane label="歌单" name="songList">歌单</el-tab-pane>
       <el-tab-pane label="排行榜" name="4">排行榜</el-tab-pane>
       <el-tab-pane label="歌手" name="5">歌手</el-tab-pane>
       <el-tab-pane label="最新音乐" name="6">最新音乐</el-tab-pane>
@@ -93,14 +138,19 @@ export default {
     return {
       activeName: "1",
       bannerList: [],
+      // 推荐歌单列表
       recommendSongList: [],
+      // 独家放送
       privatecontentList: [],
+      // 推荐MV列表
+      recommendMvList: [],
     };
   },
   mounted() {
     this.getBanner();
     this.getRecommendSongList();
     this.getPrivateContentList();
+    this.getRecommendMvList();
   },
   methods: {
     // 获取banner图
@@ -136,10 +186,17 @@ export default {
           console.log(error);
         });
     },
-    // 计算歌单播放量
+    // 计算播放量
     playCount(count) {
-      let play = Math.round(count / 10000);
-      let playNum = play + "万";
+      let play;
+      let playNum;
+      if (count > 10000) {
+        play = Math.round(count / 10000);
+        playNum = play + "万";
+      } else {
+        play = count;
+        playNum = play + "";
+      }
       return playNum;
     },
     // 获取独家放送入口列表
@@ -157,6 +214,24 @@ export default {
         .catch((error) => {
           console.log(error);
         });
+    },
+    // 获取推荐MV
+    getRecommendMvList() {
+      let that = this;
+      let url = "/personalized/mv";
+      server
+        .post(url)
+        .then((res) => {
+          that.recommendMvList = res.result;
+          console.log("推荐MV：", res);
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    },
+    // 点击跳转到歌单标签页
+    toRecommendSongList() {
+      this.activeName = "songList";
     },
   },
 };
@@ -211,7 +286,7 @@ export default {
   background-color: #cc66ff;
 }
 /* 标签字体大小 */
-.discover_music_wrapper .el-tabs__item {
+.discover_music_wrapper >>> .el-tabs__item {
   font-size: 0.18rem;
 }
 /* 鼠标移入标签时的文字颜色 */
@@ -245,21 +320,26 @@ export default {
 .recommend_song_wrapper {
   display: flex;
   flex-direction: column;
+  position: relative;
 }
-/* 推荐歌单大标题、独家放送大标题  */
+/* 推荐歌单大标题、独家放送大标题、推荐MV大标题  */
 .recommend_song_wrapper .recommend_song_title,
-.privatecontent_wrapper .privatecontent_title {
+.privatecontent_wrapper .privatecontent_title,
+.recommend_mv_wrapper .recommend_mv_title {
   font-size: 0.24rem;
   font-weight: bold;
   margin-bottom: 0.1rem;
 }
 .recommend_song_title > p,
-.privatecontent_title > p {
+.privatecontent_title > p,
+.recommend_mv_title > p {
   display: flex;
   align-items: center;
+  float: left;
 }
 .recommend_song_wrapper .recommend_song_title > p:hover,
-.privatecontent_wrapper .privatecontent_title > p:hover {
+.privatecontent_wrapper .privatecontent_title > p:hover,
+.recommend_mv_title > p:hover {
   cursor: pointer;
   color: #303133;
 }
@@ -272,7 +352,8 @@ export default {
   margin-bottom: 0.2rem;
 }
 /* 歌单容器 */
-.song_list_wrapper .song_list {
+.song_list_wrapper .song_list,
+.recommend_mv_list_wrapper .recommend_mv_list {
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -280,12 +361,14 @@ export default {
 }
 /* 歌单封面图片、独家放送图片 */
 .song_list > .el-image,
-.privatecontent_list > .el-image {
+.privatecontent_list > .el-image,
+.recommend_mv_list > .el-image {
   border-radius: 0.06rem;
   margin-bottom: 0.1rem;
 }
 .song_list > .el-image:hover,
-.privatecontent_list > .el-image:hover {
+.privatecontent_list > .el-image:hover,
+.recommend_mv_list > .el-image:hover {
   cursor: pointer;
 }
 /* 歌单名字、独家放送个体名字 */
@@ -316,8 +399,9 @@ export default {
   color: #fff;
   background-color: rgba(0, 0, 0, 0.05);
 }
-/* 推荐歌单播放量 */
-.song_list .song_play_count {
+/* 推荐歌单播放量、推荐MV播放量 */
+.song_list .song_play_count,
+.recommend_mv_list .mv_play_count {
   position: absolute;
   top: 0.04rem;
   right: 0.06rem;
@@ -327,7 +411,8 @@ export default {
   color: #fff;
   background-color: rgba(0, 0, 0, 0.08);
 }
-.song_play_count .list_play_icon {
+.song_play_count .list_play_icon,
+.mv_play_count .list_play_icon {
   margin-right: 0.04rem;
   text-align: center;
 }
@@ -359,8 +444,48 @@ export default {
   color: #fff;
   background-color: rgba(0, 0, 0, 0.05);
 }
-/* .privatecontent_list > .el-image:hover + .plsp_btn {
-  color: #fff;
-  background-color: rgba(0, 0, 0, 0.05);
-} */
+
+/* 推荐MV外层容器 */
+.recommend_mv_wrapper {
+  display: flex;
+  flex-direction: column;
+}
+/* 推荐MV列表容器 */
+.recommend_mv_wrapper .recommend_mv_list_wrapper {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.18rem;
+  margin-bottom: 0.2rem;
+}
+/* MV名字 */
+.recommend_mv_list .mv_list_title {
+  width: 100%;
+  font-size: 0.14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #303133;
+  margin-bottom: 0.02rem;
+}
+.recommend_mv_list .mv_list_title:hover {
+  cursor: pointer;
+  color: #000;
+}
+/* MV作者名字 */
+.recommend_mv_list .mv_list_artistName {
+  font-size: 0.12rem;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+.mv_list_artistName > p {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #999;
+}
+.mv_list_artistName > p:hover {
+  cursor: pointer;
+  color: #303133;
+}
 </style>
