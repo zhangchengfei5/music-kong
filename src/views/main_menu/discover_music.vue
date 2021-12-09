@@ -303,7 +303,7 @@ export default {
 .el-tab-pane {
   overflow-y: auto;
   overflow-x: auto;
-  padding: 0.65rem 0 0.5rem;
+  padding: 0.65rem 0 0.1rem;
 }
 
 /* 轮播图容器的高度 */
@@ -456,6 +456,10 @@ export default {
   grid-template-columns: repeat(4, 1fr);
   gap: 0.18rem;
   margin-bottom: 0.2rem;
+}
+.recommend_mv_list > .el-image {
+  width: 100%;
+  height: 100%;
 }
 /* MV名字 */
 .recommend_mv_list .mv_list_title {

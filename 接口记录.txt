@@ -1,5 +1,6 @@
 1.获取用户歌单
 接口地址 : /user/playlist
+res.data.playlist即是歌单列表数组
 id 是歌单ID
 userId 是创建者ID
 name 是歌单名字

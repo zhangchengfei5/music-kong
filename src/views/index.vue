@@ -68,26 +68,32 @@
           default-active="/discover_music"
           text-color="#666"
           active-text-color="#000"
-          router
+          @select="onClickMenu"
         >
-          <el-menu-item index="/discover_music">发现音乐</el-menu-item>
-          <el-menu-item index="/boke">播客</el-menu-item>
-          <el-menu-item index="/video">视频</el-menu-item>
-          <el-menu-item index="/friends">朋友</el-menu-item>
-          <el-menu-item index="/living">直播</el-menu-item>
-          <el-menu-item index="/private_fm">私人FM</el-menu-item>
+          <el-menu-item index="0">发现音乐</el-menu-item>
+          <el-menu-item index="1">播客</el-menu-item>
+          <el-menu-item index="2">视频</el-menu-item>
+          <el-menu-item index="3">朋友</el-menu-item>
+          <el-menu-item index="4">直播</el-menu-item>
+          <el-menu-item index="5">私人FM</el-menu-item>
           <el-menu-item-group title="我的音乐">
-            <el-menu-item index="/local_download">本地与下载</el-menu-item>
-            <el-menu-item index="/last_play">最近播放</el-menu-item>
-            <el-menu-item index="/my_music_cloud">我的音乐云盘</el-menu-item>
-            <el-menu-item index="/my_boke">我的播客</el-menu-item>
-            <el-menu-item index="/my_collections">我的收藏</el-menu-item>
+            <el-menu-item index="6">本地与下载</el-menu-item>
+            <el-menu-item index="7">最近播放</el-menu-item>
+            <el-menu-item index="8">我的音乐云盘</el-menu-item>
+            <el-menu-item index="9">我的播客</el-menu-item>
+            <el-menu-item index="10">我的收藏</el-menu-item>
           </el-menu-item-group>
-          <el-sub-menu index="8">
+          <el-sub-menu index="11">
             <template #title>
               <span>创建的歌单</span>
             </template>
-            <el-menu-item index="/my_favourtie_song">我喜欢的音乐</el-menu-item>
+            <el-menu-item
+              v-for="(slItem, slIndex) in songList"
+              :key="slItem.id"
+              :index="'11-' + slIndex"
+              @click="selectMenu(slItem)"
+              >{{ slItem.name }}</el-menu-item
+            >
           </el-sub-menu>
         </el-menu>
       </div>
@@ -215,10 +221,12 @@ export default {
       },
       username: "登录",
       isLogin: false,
+      loginStatus: false,
       song: "",
       // 播放状态 true为播放中显示暂停按钮，false为暂停中显示播放按钮
       playStatus: false,
       precentAge: 50,
+      songList: [],
     };
   },
   mounted() {
@@ -226,8 +234,8 @@ export default {
       this.precentAge = 80;
     }, 2000);
     // 判断是否登录了，如果登陆了就直接赋值用户名和头像
-    let loginStatus = sessionStorage.getItem("loginStatus");
-    if (loginStatus) {
+    this.loginStatus = sessionStorage.getItem("loginStatus");
+    if (this.loginStatus) {
       let user = JSON.parse(sessionStorage.getItem("profile"));
       // 判断user里是否有属性，如果有就是不为空可以赋值
       if (Object.keys(user).length > 0) {
@@ -235,6 +243,15 @@ export default {
         this.imgUrl.user = user.avatarUrl;
       }
     }
+  },
+  watch: {
+    loginStatus: function (newVal, oldVal) {
+      if (newVal) {
+        this.getUserPlayList();
+      } else {
+        console.log("上一个值为：", oldVal);
+      }
+    },
   },
   methods: {
     // 登录
@@ -291,10 +308,90 @@ export default {
           sessionStorage.setItem("uid", res.account.id);
           that.imgUrl.user = res.profile.avatarUrl;
           that.username = res.profile.nickname;
+          that.loginStatus = true;
+          location.reload();
         })
         .catch((err) => {
           console.log(err);
         });
+    },
+    // 获取用户歌单
+    getUserPlayList() {
+      if (!sessionStorage.getItem("loginStatus")) {
+        this.$message({
+          message: "请先登录",
+        });
+        return;
+      }
+      let that = this;
+      // limit用于设置返回数量，不设置则默认为30
+      let limit = 20;
+      let uid = sessionStorage.getItem("uid");
+      let url = "/user/playlist";
+      let params = {};
+      params.uid = uid;
+      params.limit = limit;
+      server
+        .post(url, params)
+        .then((res) => {
+          console.log(res);
+          if (res.code != 200) {
+            console.log("获取用户歌单失败");
+            return;
+          }
+          that.songList = res.playlist;
+          console.log("用户歌单为：", res.playlist);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+    //  点击菜单跳转页面
+    onClickMenu(index) {
+      switch (Number(index)) {
+        case 0:
+          this.$router.push("/discover_music");
+          break;
+        case 1:
+          this.$router.push("/boke");
+          break;
+        case 2:
+          this.$router.push("/video");
+          break;
+        case 3:
+          this.$router.push("/friends");
+          break;
+        case 4:
+          this.$router.push("/living");
+          break;
+        case 5:
+          this.$router.push("/private_fm");
+          break;
+        case 6:
+          this.$router.push("/local_download");
+          break;
+        case 7:
+          this.$router.push("/last_play");
+          break;
+        case 8:
+          this.$router.push("/my_music_cloud");
+          break;
+        case 9:
+          this.$router.push("/my_boke");
+          break;
+        case 10:
+          this.$router.push("/my_collections");
+          break;
+        default:
+          break;
+      }
+    },
+    // 点击歌单菜单时
+    selectMenu(item) {
+      let songList = JSON.stringify(item);
+      this.$router.push(
+        "/my_favourtie_song?slItem=" + encodeURIComponent(songList)
+      );
     },
     // 点击登录文字后
     isShowLogin() {
