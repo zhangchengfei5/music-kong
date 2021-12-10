@@ -37,3 +37,66 @@ cookie即可
 
 解决：大标题给个div做容器，div里放个p标签里面写标题和icon，这时的p标签和容器div的宽度是一样的，但是给p标签加上 float:left 之后就不会了，这样
 p标题就是被内容撑开了，因为外层有个div做容器也不会影响页面整体布局
+
+7.我的歌单详情页面用的都是同一个页面，但是点击菜单跳转时传入的歌单id不一样，所以数据不一样。由于跳转不是在歌单详情页跳转的，而是在外面的页面的
+菜单点击跳转的，但是路由跳转跳到同一个页面的时候不起作用，找到了几个方法。
+
+方法1：
+window.location.href = "/my_favourtie_song?slItem=" + encodeURIComponent(songList);
+上述的路径是写自己写的路径，这只是个示例
+分析：已测试，虽然效果达到了，但是会重新渲染一次页面，类似刷新的效果，体验效果就不太好
+
+方法2:
+// 测试的是带id的传参
+this.$router.push('/home?id='+id+"&_time="+new Date()) 
+this.$router.push({path:'/home'}+new Date())
+在路由跳转的时候加上时间戳,上面只是示例，路径和参数写自己要传的
+
+分析：我测试的是带id的跳转，但是并没有生效，第二个没试过，可能可以。
+
+方法3:
+watch监听$route
+需要注意的是页面初始化更新的数据需要放到watch中进行监听to和from的变化。
+watch :{
+  　'$route': function (to, from) {
+    //执行数据更新查询
+　　this.changePage();
+　　}
+}
+
+分析：比第一种方法的体验好很多，这个changePage方法是自己获取数据的方法，要自己写
+
+方法4： (来源：知乎;作者：枯树无花;链接：https://www.zhihu.com/question/49863095/answer/339933296)
+(1)新建一个名为refresh.vue的文件（放在你认为合理的任意目录）
+(2)在refresh.vue里添加 beforeRouteEnter“路由钩子”代码块，代码如下：
+
+beforeRouteEnter(to, from, next)  {
+ next(vm => {
+     vm.$router.replace(from.path);
+    // 跳到该路由页面后，再替换为from.path来源路径 
+ })
+}
+
+(3)在路由文件里配置，加上refresh 的路由，路径一般定义为 /refresh，代码块如下：
+{
+    name: "refresh",
+    path: `${appRoot}/refresh`,
+    component: () => import('@/views/errPage/refresh') 
+    // 目录更改为你自己的refresh.vue的目录
+}
+
+(4)当你想刷新当前页面的时候，可以调一下 下面这段代码：
+
+this.$router.replace('/refresh')
+
+分析：没有测试，因为发现跟问题不符，这个是在同一个页面跳转到自身页面的；而问题是页面1里的菜单跳页面2，只是页面2的路径固定了，传的参数不一样
+
+8.歌单详情页获取到的简介内容要做控制展示多行，如果内容超过一行就显示一个图标可以控制展开，默认为不展开，即是多出的部分显示省略号，点击后可展开
+全部内容；如果内容没有超过一行的则不显示控制展开的图标
+
+问题：如何判断内容是否超过一行
+
+解决：1.先在外面新建一个容器，然后把内容放到这个容器里，此时外边的容器的display设置为none
+2.这时取到内容的display设置block(即能显示出内容就行)，取内容容器的宽度和外面容器的宽度相比较，如果外面容器的宽度大于内容容器的宽度，则显示是
+可以看到控制展开图标的；否则不显示控制展开图标。
+3.点击展开图标即显示全部内容，再次点击则收回内容

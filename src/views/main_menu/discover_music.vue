@@ -128,6 +128,7 @@
 <script>
 import { ArrowRight, VideoPlay } from "@element-plus/icons";
 import server from "../../utils/http.js";
+import util from "@/utils/util.js";
 
 export default {
   components: {
@@ -151,6 +152,14 @@ export default {
     this.getRecommendSongList();
     this.getPrivateContentList();
     this.getRecommendMvList();
+  },
+  computed: {
+    playCount: function () {
+      return function (val) {
+        let count = util.playCount(val);
+        return count;
+      };
+    },
   },
   methods: {
     // 获取banner图
@@ -187,18 +196,18 @@ export default {
         });
     },
     // 计算播放量
-    playCount(count) {
-      let play;
-      let playNum;
-      if (count > 10000) {
-        play = Math.round(count / 10000);
-        playNum = play + "万";
-      } else {
-        play = count;
-        playNum = play + "";
-      }
-      return playNum;
-    },
+    // playCount(count) {
+    //   let play;
+    //   let playNum;
+    //   if (count > 10000) {
+    //     play = Math.round(count / 10000);
+    //     playNum = play + "万";
+    //   } else {
+    //     play = count;
+    //     playNum = play + "";
+    //   }
+    //   return playNum;
+    // },
     // 获取独家放送入口列表
     getPrivateContentList() {
       let that = this;

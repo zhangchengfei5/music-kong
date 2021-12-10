@@ -65,7 +65,8 @@
     <div class="home_main_wrapper">
       <div class="menu_wrapper">
         <el-menu
-          default-active="/discover_music"
+          default-active="0"
+          :default-openeds="opends"
           text-color="#666"
           active-text-color="#000"
           @select="onClickMenu"
@@ -227,6 +228,8 @@ export default {
       playStatus: false,
       precentAge: 50,
       songList: [],
+      // 默认展开菜单
+      opends: ["11"],
     };
   },
   mounted() {
@@ -319,7 +322,7 @@ export default {
     getUserPlayList() {
       if (!sessionStorage.getItem("loginStatus")) {
         this.$message({
-          message: "请先登录",
+          message: "请先登录,才能获取歌单",
         });
         return;
       }

@@ -14,11 +14,9 @@
         </div>
         <!-- 歌单创建者/创建时间 -->
         <div class="mfst_creator">
-          <el-image
-            :src="slItem.creator != null ? slItem.creator.avatarUrl : ''"
-          ></el-image>
+          <el-image :src="creator != null ? creator.avatarUrl : ''"></el-image>
           <p class="creator_name">
-            {{ slItem.creator != null ? slItem.creator.nickname : "" }}
+            {{ creator != null ? creator.nickname : "" }}
           </p>
           <p class="creator_time">{{ formatterTime(slItem.createTime) }}创建</p>
         </div>
@@ -41,26 +39,34 @@
         </div>
         <!-- 歌单简介 -->
         <div class="mfst_describe">
-          <p v-if="slItem.tags != [] ? slItem.tags.length > 0 : ''">
+          <p v-if="tags != [] ? tags.length > 0 : ''">
             标签 :
-            <span v-for="(tagItem, tagIndex) in slItem.tags" :key="tagIndex"
+            <span v-for="(tagItem, tagIndex) in tags" :key="tagIndex"
               >{{ tagItem }}
               {{
-                (tagIndex == slItem.tags) != []
-                  ? slItem.tags.length - 1
-                    ? ""
-                    : "/"
-                  : ""
+                tags != [] ? (tagIndex == tags.length - 1 ? "" : "/") : ""
               }}</span
             >
           </p>
-          <p>歌曲 : 100 播放：10万</p>
           <p>
-            简介 : <span>你好，欢迎收听本歌单</span>
-            <el-icon @click="showDescribe = !showDescribe"
-              ><caret-top v-if="showDescribe" /><caret-bottom v-else
-            /></el-icon>
+            歌曲 : {{ slItem.trackCount }} 播放：{{
+              playCount(slItem.playCount)
+            }}
           </p>
+          <div v-if="description" class="description_wrapper">
+            <p>简介 :</p>
+            <span
+              id="describe_text"
+              :style="
+                showDescribe ? 'white-space:pre-wrap' : 'white-space:nowrap'
+              "
+              >{{ description }}</span
+            >
+            <el-icon v-if="switchWrap" @click="showDescribe = !showDescribe">
+              <caret-top v-if="showDescribe" /><caret-bottom v-else />
+            </el-icon>
+          </div>
+          <span id="copy_describe" style="display: none"></span>
         </div>
       </div>
     </div>
@@ -104,6 +110,8 @@ import {
   CaretTop,
   Download,
 } from "@element-plus/icons";
+// import util from "../../../utils/util.js";
+import util from "@/utils/util.js";
 // import server from "../../../utils/http.js";
 
 export default {
@@ -125,7 +133,7 @@ export default {
       slItem: "",
       creator: "",
       tags: [],
-      subscribers: [],
+      description: "",
       songList: [
         {
           action: 1,
@@ -150,19 +158,87 @@ export default {
         },
       ],
       songListId: "",
+      switchWrap: false,
     };
   },
+  created() {
+    this.getSlItem();
+  },
   mounted() {
-    // 获取到传递过来的歌单对象
-    let listItem = decodeURIComponent(this.$route.query.slItem);
-    this.slItem = JSON.parse(listItem);
-    if (Object.keys(this.slItem).length > 0) {
-      this.creator = this.slItem.creator;
-      this.tags = this.slItem.tags;
-      this.subscribers = this.slItem.subscribers;
-    }
+    this.isLineFeed();
+  },
+  computed: {
+    // 播放量
+    playCount: function () {
+      return function (val) {
+        let count = util.playCount(val);
+        return count;
+      };
+    },
+    // 创建时间
+    formatterTime: function () {
+      return function (val) {
+        let date = util.formatterTime(val);
+        return date;
+      };
+    },
+  },
+  watch: {
+    // 由于不同的歌单不同的数据，所以当路由变换时执行以下方法
+    $route: function () {
+      this.showDescribe = false;
+      this.switchWrap = false;
+      if (this.$route.query.slItem == null) {
+        console.log("传递过来的参数为空");
+      } else {
+        this.getSlItem();
+        this.isLineFeed();
+      }
+    },
   },
   methods: {
+    // 切换歌单后重新获取数据
+    getSlItem() {
+      // 获取到传递过来的歌单对象
+      let listItem = decodeURIComponent(this.$route.query.slItem);
+      this.slItem = JSON.parse(listItem);
+      if (Object.keys(this.slItem).length > 0) {
+        this.creator = this.slItem.creator;
+        this.tags = this.slItem.tags;
+        this.description = this.slItem.description;
+        console.log(this.description);
+      }
+    },
+    // 判断文字是否超出一行
+    isLineFeed() {
+      this.$nextTick(function () {
+        // 判断文字是否超出一行
+        let desc = document.getElementById("describe_text");
+        let cpds = document.getElementById("copy_describe");
+        if (desc != null) {
+          cpds.style.display = "block";
+          // 绝对定位是为了避免它的宽度撑满了父容器的宽度，让它是被内容被撑开
+          cpds.style.position = "absolute";
+          let descWidth = desc.offsetWidth;
+          cpds.style.fontSize = "0.14rem";
+          let kongGE =
+            "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+          cpds.innerHTML = desc.innerHTML;
+          desc.innerHTML = kongGE + cpds.innerHTML;
+          let cpdsWidth = cpds.offsetWidth;
+          // 内容的宽度比容器的宽度大则显示展示按钮
+          if (cpdsWidth > descWidth) {
+            this.switchWrap = true;
+            console.log(this.switchWrap);
+            cpds.style.display = "none";
+          } else {
+            this.switchWrap = false;
+            console.log(this.switchWrap);
+            cpds.style.display = "none";
+          }
+        }
+      });
+    },
     // 自定义歌单列表的索引
     getIndexNum(num) {
       if (num < 9) {
@@ -172,14 +248,6 @@ export default {
         let num2 = num + 1;
         return num2;
       }
-    },
-    // 格式化时间
-    formatterTime(time) {
-      let year = new Date(time).getFullYear();
-      let month = new Date(time).getMonth() + 1;
-      let day = new Date(time).getDate();
-      let date = year + "-" + month + "-" + day;
-      return date;
     },
   },
 };
@@ -194,6 +262,17 @@ export default {
   flex-direction: column;
   padding: 0 0.25rem;
   overflow-y: auto;
+  overflow-x: hidden;
+}
+/* 隐藏滚动条或改变滚动条整体样式 */
+.my_favourite_song_wrapper::-webkit-scrollbar {
+  background-color: #fff;
+  width: 0.04rem;
+}
+/* 设置内部滚动条的颜色和圆角 */
+.my_favourite_song_wrapper::-webkit-scrollbar-thumb {
+  width: 0.1rem;
+  background-color: #e6e6e6;
 }
 /* 顶部容器 */
 .mfst_wrapper {
@@ -212,6 +291,7 @@ export default {
   flex-direction: column;
   margin-left: 0.15rem;
   flex: 1;
+  position: relative;
 }
 
 /* 歌单名字容器 */
@@ -230,6 +310,7 @@ export default {
 /* 歌单名字 */
 .mfst_name .song_list_name {
   font-size: 0.22rem;
+  font-weight: bold;
   color: #000;
   margin-left: 0.1rem;
 }
@@ -277,7 +358,7 @@ export default {
   align-items: center;
   border: 1px solid #606266;
   border-radius: 0.5rem;
-  padding: 0.05rem 0.2rem;
+  padding: 0.03rem 0.2rem 0.03rem 0.1rem;
 }
 /* 第一个播放全部按钮 */
 .mfst_action > .btn:first-child {
@@ -317,9 +398,9 @@ export default {
   display: flex;
   flex-direction: column;
   margin-top: 0.1rem;
+  overflow: hidden;
 }
 .mfst_describe > p {
-  position: relative;
   font-size: 0.14rem;
   padding-right: 0.2rem;
   user-select: none;
@@ -334,18 +415,32 @@ export default {
   color: #bb33ff;
 }
 /* 简介内容 */
-.mfst_describe > p:last-child > span {
-  user-select: text;
-  white-space: nowrap;
+.description_wrapper {
+  display: flex;
+  font-size: 0.14rem;
   overflow: hidden;
+  user-select: none;
+  color: #606266;
+  position: relative;
+}
+.description_wrapper > p {
+  width: 0.41rem;
+  position: absolute;
+}
+.description_wrapper > span {
+  user-select: text;
+  width: 7.7rem;
+  overflow: hidden;
+  white-space: nowrap;
   text-overflow: ellipsis;
+  color: #999;
 }
 /* 简介展示和缩放的icon */
-.mfst_describe > p > .el-icon {
+.description_wrapper > .el-icon {
   position: absolute;
   right: 0;
 }
-.mfst_describe > p > .el-icon:hover {
+.description_wrapper > .el-icon:hover {
   cursor: pointer;
 }
 
