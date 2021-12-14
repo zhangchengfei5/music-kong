@@ -76,7 +76,50 @@
     <div class="mfsl_wrapper">
       <el-tabs v-model="activeName">
         <el-tab-pane label="歌曲列表" name="1">
-          <el-table :data="songList" stripe highlight-current-row>
+          <table class="mfsl_song_table">
+            <thead class="mfsl_song_head">
+              <tr>
+                <th class="head_action">操作</th>
+                <th class="head_name">标题</th>
+                <th class="head_singer">歌手</th>
+                <th class="head_album">专辑</th>
+                <th class="head_time">时间</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                class="mfsl_song_list"
+                :class="songIndex % 2 == 0 ? 'dan' : 'shuang'"
+                v-for="(songItem, songIndex) in songList"
+                :key="songItem.id"
+              >
+                <td class="list_action">
+                  <p>{{ getIndexNum(songIndex) }}</p>
+                  <i class="iconfont icon-like"></i>
+                  <el-icon class="download_icon"><download /></el-icon>
+                </td>
+                <td class="list_name">
+                  <p>{{ songItem.name }}</p>
+                </td>
+                <td class="list_singer">
+                  <p
+                    v-for="(singerItem, singerIndex) in songItem.singer"
+                    :key="singerIndex"
+                  >
+                    {{ singerItem
+                    }}{{ singerIndex != songItem.singer.length - 1 ? "/" : "" }}
+                  </p>
+                </td>
+                <td class="list_album">
+                  <p>{{ songItem.album }}</p>
+                </td>
+                <td class="list_time">
+                  <p>{{ formatterSongTime(songItem.time) }}</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <!-- <el-table :data="songList" stripe highlight-current-row>
             <el-table-column
               type="index"
               :index="getIndexNum"
@@ -90,7 +133,7 @@
             <el-table-column prop="singer" label="歌手"> </el-table-column>
             <el-table-column prop="album" label="专辑"> </el-table-column>
             <el-table-column prop="time" label="时间"> </el-table-column>
-          </el-table>
+          </el-table> -->
         </el-tab-pane>
         <el-tab-pane label="评论(177)" name="2">Config</el-tab-pane>
         <el-tab-pane label="收藏者" name="3">Role</el-tab-pane>
@@ -112,7 +155,7 @@ import {
 } from "@element-plus/icons";
 // import util from "../../../utils/util.js";
 import util from "@/utils/util.js";
-// import server from "../../../utils/http.js";
+import server from "@/utils/http.js";
 
 export default {
   components: {
@@ -134,29 +177,7 @@ export default {
       creator: "",
       tags: [],
       description: "",
-      songList: [
-        {
-          action: 1,
-          name: "你好",
-          singer: "nihao",
-          album: "你好专辑",
-          time: "3:27",
-        },
-        {
-          action: 1,
-          name: "你好",
-          singer: "nihao",
-          album: "你好专辑",
-          time: "3:27",
-        },
-        {
-          action: 1,
-          name: "你好",
-          singer: "nihao",
-          album: "你好专辑",
-          time: "3:27",
-        },
-      ],
+      songList: [],
       songListId: "",
       switchWrap: false,
     };
@@ -166,6 +187,7 @@ export default {
   },
   mounted() {
     this.isLineFeed();
+    this.getPlayListSong();
   },
   computed: {
     // 播放量
@@ -182,6 +204,15 @@ export default {
         return date;
       };
     },
+    // 格式化歌曲时间
+    formatterSongTime() {
+      return function (time) {
+        let minutes = new Date(time).getMinutes();
+        let seconds = new Date(time).getSeconds();
+        let songTime = minutes + ":" + seconds;
+        return songTime;
+      };
+    },
   },
   watch: {
     // 由于不同的歌单不同的数据，所以当路由变换时执行以下方法
@@ -193,6 +224,7 @@ export default {
       } else {
         this.getSlItem();
         this.isLineFeed();
+        this.getPlayListSong();
       }
     },
   },
@@ -206,7 +238,6 @@ export default {
         this.creator = this.slItem.creator;
         this.tags = this.slItem.tags;
         this.description = this.slItem.description;
-        console.log(this.description);
       }
     },
     // 判断文字是否超出一行
@@ -229,11 +260,9 @@ export default {
           // 内容的宽度比容器的宽度大则显示展示按钮
           if (cpdsWidth > descWidth) {
             this.switchWrap = true;
-            console.log(this.switchWrap);
             cpds.style.display = "none";
           } else {
             this.switchWrap = false;
-            console.log(this.switchWrap);
             cpds.style.display = "none";
           }
         }
@@ -248,6 +277,43 @@ export default {
         let num2 = num + 1;
         return num2;
       }
+    },
+
+    // 获取歌单所有歌曲
+    getPlayListSong() {
+      let that = this;
+      let url = "/playlist/track/all";
+      let id = that.slItem.id;
+      let params = {};
+      params.id = id;
+      server
+        .post(url, params)
+        .then((res) => {
+          console.log(res);
+          if (res.code != 200) {
+            console.log("获取歌单歌曲失败");
+            return;
+          }
+          console.log("获取歌曲成功");
+          let songs = res.songs;
+          let songList = songs.map((i) => {
+            let song = {};
+            song.id = i.id;
+            song.name = i.name;
+            song.singer = i.ar.map((singer) => {
+              return singer.name;
+            });
+            song.album = i.al.name;
+            song.time = i.dt;
+            return song;
+          });
+
+          console.log(songList);
+          that.songList = songList;
+        })
+        .catch((err) => {
+          console.log(err);
+        });
     },
   },
 };
@@ -349,7 +415,7 @@ export default {
 .mfst_right_wrapper .mfst_action {
   display: flex;
   align-items: center;
-  margin-top: 0.05rem;
+  margin-top: 0.1rem;
   font-size: 0.14rem;
 }
 /* 按钮样式 */
@@ -478,18 +544,107 @@ export default {
   color: #000;
 }
 
+/* 歌单列表的表格 */
+.mfsl_song_table {
+  width: 100%;
+  font-size: 0.14rem;
+  border-collapse: collapse;
+}
+
+/* 表头 */
+.mfsl_song_head th {
+  font-weight: normal;
+  color: #888;
+  padding: 0.05rem;
+  user-select: none;
+}
+
+/* 其他表头的标题靠左 */
+.mfsl_song_head th:not(:first-child) {
+  text-align: left;
+}
+
+.mfsl_song_head th:not(:first-child):hover {
+  background-color: #f0f1f2;
+}
+
+/* 表头的操作and表头的时间 */
+.mfsl_song_head .head_action,
+.mfsl_song_head .head_time {
+  flex: 1;
+}
+
+/* 表头的标题 */
+.mfsl_song_head .head_name {
+  flex: 4;
+}
+
+/* 表头的歌手 */
+.mfsl_song_head .head_singer {
+  flex: 2;
+}
+
+/* 表头的专辑 */
+.mfsl_song_head .head_album {
+  flex: 3;
+}
+
+/* 列表 */
+.mfsl_song_list {
+  color: #656565;
+}
+
+/* 单数行 */
+.dan {
+  background-color: #f9f9f9;
+}
+/* 双数行 */
+.shuang {
+  background-color: #fff;
+}
+
+.mfsl_song_list:hover {
+  background-color: #f0f1f2;
+}
+
+.mfsl_song_list:active {
+  background-color: #e5e5e5;
+}
+
+.mfsl_song_list td {
+  user-select: none;
+  padding: 0.1rem;
+}
+
+.mfsl_song_list td:first-child {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+}
+
+.mfsl_song_list td:first-child > p {
+  color: #d2c3db;
+  user-select: none;
+}
+
+.list_action > p {
+  font-size: 0.14rem;
+  margin-right: 0.1rem;
+  /* transform: scale(0.83); */
+}
+
 /* 改变选中行的颜色以及鼠标移入行的颜色 */
-.el-tab-pane .el-table {
+/* .el-tab-pane .el-table {
   --el-table-current-row-background-color: #e5e5e5;
   --el-table-row-hover-background-color: #f0f1f2;
 }
 .mfsl_wrapper >>> .el-table td.el-table__cell div {
   display: flex;
   align-items: center;
-}
+} */
 /* 喜欢和下载两个icon */
 .mfsl_wrapper >>> i.iconfont.icon-like {
-  font-size: 0.22rem;
+  font-size: 0.18rem;
   color: #b3b3b3;
 }
 .mfsl_wrapper >>> i.iconfont.icon-like:hover {
@@ -497,12 +652,34 @@ export default {
   color: #606266;
 }
 .mfsl_wrapper >>> i.el-icon.download_icon {
-  --font-size: 0.22rem;
-  margin-left: 0.1rem;
+  --font-size: 0.18rem;
   color: #b3b3b3;
 }
 .mfsl_wrapper >>> i.el-icon.download_icon:hover {
   cursor: pointer;
   color: #606266;
+}
+
+.mfsl_song_list td > p {
+  /* float: left; */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* .list_name > p {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+} */
+
+.mfsl_song_list .list_singer {
+  display: flex;
+}
+
+.mfsl_song_list .list_singer > p:hover,
+.mfsl_song_list .list_album > p:hover {
+  color: #343434;
+  cursor: pointer;
 }
 </style>

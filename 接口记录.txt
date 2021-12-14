@@ -12,3 +12,10 @@ description 是歌单简介 没有则为null
 tags 是歌单标签 没有则为[]
 creator 是歌单创建者信息
 creator.nickname 是歌单创建者名字
+
+2.获取歌单所有歌曲
+接口地址：/playlist/track/all 必传参数是歌单id，传入的歌单id就是用户歌单的id
+
+
+3.获取音乐url
+接口地址及示例：/song/url?id=33894312 /song/url?id=405998841,33894312 id是音乐id
