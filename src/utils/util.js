@@ -21,7 +21,15 @@ function formatterTime(time) {
   return date;
 }
 
+function formatterSongTime(time) {
+  let minutes = new Date(time).getMinutes();
+  let seconds = new Date(time).getSeconds();
+  let songTime = minutes + ":" + seconds;
+  return songTime;
+}
+
 module.exports = {
   formatterTime,
   playCount,
+  formatterSongTime,
 };

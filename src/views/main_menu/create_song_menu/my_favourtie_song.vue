@@ -75,6 +75,7 @@
     <!-- S-歌单列表容器 -->
     <div class="mfsl_wrapper">
       <el-tabs v-model="activeName">
+        <!-- S-歌曲列表 -->
         <el-tab-pane label="歌曲列表" name="1">
           <table class="mfsl_song_table">
             <thead class="mfsl_song_head">
@@ -92,11 +93,30 @@
                 :class="songIndex % 2 == 0 ? 'dan' : 'shuang'"
                 v-for="(songItem, songIndex) in songList"
                 :key="songItem.id"
+                @dblclick="playSong(songItem)"
               >
                 <td class="list_action">
                   <p>{{ getIndexNum(songIndex) }}</p>
-                  <i class="iconfont icon-like"></i>
-                  <el-icon class="download_icon"><download /></el-icon>
+                  <i
+                    v-if="songItem.like == 1"
+                    class="iconfont icon-likefill"
+                    @click="songLike(songIndex)"
+                  ></i>
+                  <i
+                    v-else
+                    class="iconfont icon-like"
+                    @click="songLike(songIndex)"
+                  ></i>
+                  <i
+                    v-if="songItem.download == 1"
+                    class="iconfont icon-chenggong"
+                  ></i>
+                  <el-icon
+                    v-else
+                    class="download_icon"
+                    @click="songDownLoad(songIndex)"
+                    ><download
+                  /></el-icon>
                 </td>
                 <td class="list_name">
                   <p>{{ songItem.name }}</p>
@@ -119,22 +139,8 @@
               </tr>
             </tbody>
           </table>
-          <!-- <el-table :data="songList" stripe highlight-current-row>
-            <el-table-column
-              type="index"
-              :index="getIndexNum"
-              width="40"
-            ></el-table-column>
-            <el-table-column prop="action" label="操作" width="70"
-              ><i class="iconfont icon-like"></i
-              ><el-icon class="download_icon"><download /></el-icon
-            ></el-table-column>
-            <el-table-column prop="name" label="标题"> </el-table-column>
-            <el-table-column prop="singer" label="歌手"> </el-table-column>
-            <el-table-column prop="album" label="专辑"> </el-table-column>
-            <el-table-column prop="time" label="时间"> </el-table-column>
-          </el-table> -->
         </el-tab-pane>
+        <!-- E-歌曲列表 -->
         <el-tab-pane label="评论(177)" name="2">Config</el-tab-pane>
         <el-tab-pane label="收藏者" name="3">Role</el-tab-pane>
       </el-tabs>
@@ -167,6 +173,7 @@ export default {
     Download,
     CaretTop,
   },
+  emits: ["playingSong"],
   data() {
     return {
       subscribed: false,
@@ -178,8 +185,12 @@ export default {
       tags: [],
       description: "",
       songList: [],
-      songListId: "",
       switchWrap: false,
+
+      // 喜欢和下载
+      like: false,
+      download: false,
+      songId: 0,
     };
   },
   created() {
@@ -205,11 +216,9 @@ export default {
       };
     },
     // 格式化歌曲时间
-    formatterSongTime() {
+    formatterSongTime: function () {
       return function (time) {
-        let minutes = new Date(time).getMinutes();
-        let seconds = new Date(time).getSeconds();
-        let songTime = minutes + ":" + seconds;
+        let songTime = util.formatterSongTime(time);
         return songTime;
       };
     },
@@ -277,6 +286,28 @@ export default {
         let num2 = num + 1;
         return num2;
       }
+    },
+
+    // 点击喜欢歌曲
+    songLike(index) {
+      if (this.songList[index].like == 1) {
+        this.songList[index].like = 0;
+      } else {
+        this.songList[index].like = 1;
+      }
+    },
+    // 点击下载歌曲
+    songDownLoad(index) {
+      if (this.songList[index].download == 1) {
+        this.songList[index].download = 0;
+      } else {
+        this.songList[index].download = 1;
+      }
+    },
+
+    // 双击后播放歌曲
+    playSong(song) {
+      this.$emit("playingSong", song);
     },
 
     // 获取歌单所有歌曲
@@ -549,13 +580,14 @@ export default {
   width: 100%;
   font-size: 0.14rem;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 /* 表头 */
 .mfsl_song_head th {
   font-weight: normal;
   color: #888;
-  padding: 0.05rem;
+  padding: 0.1rem;
   user-select: none;
 }
 
@@ -571,22 +603,22 @@ export default {
 /* 表头的操作and表头的时间 */
 .mfsl_song_head .head_action,
 .mfsl_song_head .head_time {
-  flex: 1;
+  width: 10%;
 }
 
 /* 表头的标题 */
 .mfsl_song_head .head_name {
-  flex: 4;
+  width: 40px;
 }
 
 /* 表头的歌手 */
 .mfsl_song_head .head_singer {
-  flex: 2;
+  width: 20px;
 }
 
 /* 表头的专辑 */
 .mfsl_song_head .head_album {
-  flex: 3;
+  width: 30px;
 }
 
 /* 列表 */
@@ -629,8 +661,6 @@ export default {
 
 .list_action > p {
   font-size: 0.14rem;
-  margin-right: 0.1rem;
-  /* transform: scale(0.83); */
 }
 
 /* 改变选中行的颜色以及鼠标移入行的颜色 */
@@ -644,12 +674,24 @@ export default {
 } */
 /* 喜欢和下载两个icon */
 .mfsl_wrapper >>> i.iconfont.icon-like {
-  font-size: 0.18rem;
+  font-size: 0.24rem;
   color: #b3b3b3;
 }
 .mfsl_wrapper >>> i.iconfont.icon-like:hover {
   cursor: pointer;
   color: #606266;
+}
+.mfsl_wrapper >>> i.iconfont.icon-likefill {
+  font-size: 0.24rem;
+  color: #ec4141;
+}
+.mfsl_wrapper >>> i.iconfont.icon-likefill:hover {
+  cursor: pointer;
+  color: #d73535;
+}
+.mfsl_wrapper >>> i.iconfont.icon-chenggong {
+  font-size: 0.18rem;
+  color: #507daf;
 }
 .mfsl_wrapper >>> i.el-icon.download_icon {
   --font-size: 0.18rem;

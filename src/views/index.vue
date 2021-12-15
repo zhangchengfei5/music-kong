@@ -98,7 +98,7 @@
           </el-sub-menu>
         </el-menu>
       </div>
-      <router-view></router-view>
+      <router-view @playingSong="playSong"></router-view>
     </div>
     <!-- E-主体部分 -->
 
@@ -123,20 +123,33 @@
         <!-- 歌曲进度条 -->
         <div class="song_duration">
           <span>00:00</span>
-          <my-progress :precentage="precentAge"></my-progress>
-          <span>4:11</span>
+          <my-progress
+            :precentage="precentAge"
+            @click="controlProgress"
+          ></my-progress>
+          <span>{{ songDuration }}</span>
         </div>
         <!-- 歌曲播放、暂停等 -->
         <div class="song_control_btn">
           <i class="iconfont icon-liebiaoxunhuan"></i>
           <el-icon color="#666"><caret-left /></el-icon>
-          <el-icon class="btn_pause" v-if="playStatus" color="#666"
+          <el-icon
+            class="btn_pause"
+            v-if="playStatus"
+            color="#666"
+            @click="controlPlay"
             ><video-pause
           /></el-icon>
-          <el-icon class="btn_play" v-else color="#666"><video-play /></el-icon>
+          <el-icon class="btn_play" v-else color="#666" @click="controlPlay"
+            ><video-play
+          /></el-icon>
           <el-icon color="#666"><caret-right /></el-icon>
           <span>词</span>
         </div>
+        <!-- 播放音乐 -->
+        <audio id="nowSong" :src="songUrl" autoplay hidden>
+          暂不支持在此浏览器播放音乐
+        </audio>
       </div>
       <!-- 歌曲的待播放列表和声音控制 -->
       <div class="song_expand">
@@ -168,6 +181,7 @@ import {
 } from "@element-plus/icons";
 import myProgress from "../components/my-progress.vue";
 import server from "../utils/http.js";
+import util from "@/utils/util.js";
 
 export default {
   components: {
@@ -226,16 +240,17 @@ export default {
       song: "",
       // 播放状态 true为播放中显示暂停按钮，false为暂停中显示播放按钮
       playStatus: false,
+      // 歌曲播放进度条百分比
       precentAge: 50,
       songList: [],
       // 默认展开菜单
       opends: ["11"],
+      songUrl: "",
+      // 歌曲时长
+      songDuration: "00:00",
     };
   },
   mounted() {
-    setTimeout(() => {
-      this.precentAge = 80;
-    }, 2000);
     // 判断是否登录了，如果登陆了就直接赋值用户名和头像
     this.loginStatus = sessionStorage.getItem("loginStatus");
     if (this.loginStatus) {
@@ -405,6 +420,60 @@ export default {
         this.isLogin = true;
       }
       // this.isLogin = true;
+    },
+    // 点击歌曲播放音乐
+    playSong(song) {
+      let that = this;
+      that.songDuration = util.formatterSongTime(song.time);
+      console.log("这首音乐的时间为：", that.songDuration);
+      let url = "/song/url";
+      let params = {};
+      params.id = song.id;
+      server
+        .post(url, params)
+        .then((res) => {
+          console.log(res);
+          if (res.code != 200) {
+            console.log("获取歌曲链接失败");
+            return;
+          }
+          let songAudio = document.getElementById("nowSong");
+          if (res.data[0].url != null) {
+            that.songUrl = res.data[0].url;
+          }
+          if (!songAudio.paused) {
+            songAudio.pause();
+            if (res.data[0].url != null) {
+              that.songUrl = res.data[0].url;
+            }
+            console.log("歌曲的名字为：", song.name);
+            songAudio.play();
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+
+    // 控制播放音乐
+    controlPlay() {
+      let songAudio = document.getElementById("nowSong");
+      // 判断歌曲当前是否暂停了，true为暂停，false没暂停
+      this.playStatus = !songAudio.paused;
+      if (this.playStatus) {
+        songAudio.play();
+        console.log("当前歌曲暂停状态：", this.playStatus);
+      } else {
+        songAudio.pause();
+        console.log("当前歌曲暂停状态：", this.playStatus);
+      }
+    },
+
+    // 控制播放时长等功能
+    controlProgress() {
+      let songAudio = document.getElementById("nowSong");
+      let playDuration = songAudio.duration;
+      console.log(playDuration);
     },
   },
 };
