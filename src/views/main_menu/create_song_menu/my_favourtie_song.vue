@@ -40,7 +40,6 @@
         <!-- 歌单简介 -->
         <div class="mfst_describe">
           <p v-if="tags != [] ? tags.length > 0 : ''">
-            标签 :
             <span v-for="(tagItem, tagIndex) in tags" :key="tagIndex"
               >{{ tagItem }}
               {{
@@ -77,7 +76,11 @@
       <el-tabs v-model="activeName">
         <!-- S-歌曲列表 -->
         <el-tab-pane label="歌曲列表" name="1">
-          <table class="mfsl_song_table">
+          <table
+            class="mfsl_song_table"
+            v-loading.lock="loading"
+            element-loading-text="加载中..."
+          >
             <thead class="mfsl_song_head">
               <tr>
                 <th class="head_action">操作</th>
@@ -93,7 +96,7 @@
                 :class="songIndex % 2 == 0 ? 'dan' : 'shuang'"
                 v-for="(songItem, songIndex) in songList"
                 :key="songItem.id"
-                @dblclick="playSong(songItem)"
+                @dblclick="playSong(songItem, songIndex)"
               >
                 <td class="list_action">
                   <p>{{ getIndexNum(songIndex) }}</p>
@@ -190,7 +193,9 @@ export default {
       // 喜欢和下载
       like: false,
       download: false,
-      songId: 0,
+      songId: "",
+
+      loading: true,
     };
   },
   created() {
@@ -226,14 +231,18 @@ export default {
   watch: {
     // 由于不同的歌单不同的数据，所以当路由变换时执行以下方法
     $route: function () {
+      this.loading = true;
       this.showDescribe = false;
       this.switchWrap = false;
       if (this.$route.query.slItem == null) {
         console.log("传递过来的参数为空");
       } else {
         this.getSlItem();
+        console.log("获取到歌单ID", new Date().getSeconds());
         this.isLineFeed();
+        console.log("判断文字是否超出一行", new Date().getSeconds());
         this.getPlayListSong();
+        console.log("获取到歌单歌曲列表", new Date().getSeconds());
       }
     },
   },
@@ -306,14 +315,17 @@ export default {
     },
 
     // 双击后播放歌曲
-    playSong(song) {
+    playSong(song, songIndex) {
+      song.id = this.songId;
+      song.indexId = songIndex;
       this.$emit("playingSong", song);
     },
 
     // 获取歌单所有歌曲
     getPlayListSong() {
       let that = this;
-      let url = "/playlist/track/all";
+      let timestamp = Date.parse(new Date());
+      let url = "/playlist/track/all?t=" + timestamp;
       let id = that.slItem.id;
       let params = {};
       params.id = id;
@@ -325,11 +337,25 @@ export default {
             console.log("获取歌单歌曲失败");
             return;
           }
-          console.log("获取歌曲成功");
+          console.log("获取歌单歌曲成功");
           let songs = res.songs;
-          let songList = songs.map((i) => {
+          let sid = "";
+          console.log(songs);
+          // song.id.forEach((id, index) => {
+          //   if (index == song.id.length - 1) {
+          //     sid = sid.concat(id);
+          //   } else {
+          //     sid = sid.concat(id + ",");
+          //   }
+          // });
+          let songList = songs.map((i, index) => {
             let song = {};
             song.id = i.id;
+            if (index == songs.length - 1) {
+              sid = sid.concat(i.id);
+            } else {
+              sid = sid.concat(i.id + ",");
+            }
             song.name = i.name;
             song.singer = i.ar.map((singer) => {
               return singer.name;
@@ -338,9 +364,10 @@ export default {
             song.time = i.dt;
             return song;
           });
-
-          console.log(songList);
+          that.songId = sid;
           that.songList = songList;
+          console.log("歌单歌曲列表my：", that.songList);
+          that.loading = false;
         })
         .catch((err) => {
           console.log(err);

@@ -246,6 +246,7 @@ export default {
       // 默认展开菜单
       opends: ["11"],
       songUrl: "",
+      songUrlList: [],
       // 歌曲时长
       songDuration: "00:00",
     };
@@ -424,8 +425,35 @@ export default {
     // 点击歌曲播放音乐
     playSong(song) {
       let that = this;
+      console.log("传送过来的数据：", song);
+      let songAudio = document.getElementById("nowSong");
       that.songDuration = util.formatterSongTime(song.time);
       console.log("这首音乐的时间为：", that.songDuration);
+      // 如果发现链接大于1则不再调取接口
+      if (that.songUrlList.length > 1) {
+        // 如果歌曲是播放状态，则先暂停，然后换Url，在开启播放
+        // 如果歌曲是暂停状态，则直接换Url，然后开启播放
+        if (!songAudio.paused) {
+          songAudio.pause();
+          if (that.songUrlList[song.indexId].url != null) {
+            that.songUrl = that.songUrlList[song.indexId].url;
+          }
+          console.log("歌曲的名字为：", song.name);
+          console.log("上面歌曲的Url: ", that.songUrl);
+          songAudio.play();
+          this.playStatus = true;
+        } else {
+          if (that.songUrlList[song.indexId].url != null) {
+            that.songUrl = that.songUrlList[song.indexId].url;
+            console.log(that.songUrl);
+          } else {
+            console.log("播放错误！");
+          }
+          songAudio.play();
+          this.playStatus = true;
+        }
+        return;
+      }
       let url = "/song/url";
       let params = {};
       params.id = song.id;
@@ -437,17 +465,28 @@ export default {
             console.log("获取歌曲链接失败");
             return;
           }
-          let songAudio = document.getElementById("nowSong");
-          if (res.data[0].url != null) {
-            that.songUrl = res.data[0].url;
-          }
+          that.songUrlList = res.data;
+          console.log("歌曲的Url列表", that.songUrlList);
+
           if (!songAudio.paused) {
             songAudio.pause();
-            if (res.data[0].url != null) {
-              that.songUrl = res.data[0].url;
+            if (res.data[song.indexId].url != null) {
+              that.songUrl = res.data[song.indexId].url;
             }
             console.log("歌曲的名字为：", song.name);
+            console.log(that.songUrl);
             songAudio.play();
+            that.playStatus = true;
+          } else {
+            if (res.data[song.indexId].url != null) {
+              that.songUrl = res.data[song.indexId].url;
+              songAudio.play();
+              this.playStatus = true;
+              console.log("歌曲的名字为：", song.name);
+              console.log("上面歌曲的Url", that.songUrl);
+            } else {
+              console.log("播放错误！");
+            }
           }
         })
         .catch((err) => {
@@ -461,10 +500,12 @@ export default {
       // 判断歌曲当前是否暂停了，true为暂停，false没暂停
       this.playStatus = !songAudio.paused;
       if (this.playStatus) {
-        songAudio.play();
+        songAudio.pause();
+        this.playStatus = false;
         console.log("当前歌曲暂停状态：", this.playStatus);
       } else {
-        songAudio.pause();
+        songAudio.play();
+        this.playStatus = true;
         console.log("当前歌曲暂停状态：", this.playStatus);
       }
     },

@@ -1,7 +1,7 @@
 const axios = require("axios");
 
 const instance = axios.create({
-  baseURL: "http://localhost:3000",
+  baseURL: "https://zcf-netease-cloud-music-api.vercel.app",
   timeout: 60 * 1000,
   withCredentials: true,
   headers: {
@@ -19,12 +19,14 @@ instance.interceptors.request.use(
       if (cookie != null) {
         config.data.cookie = cookie;
       }
+      config.data.readIP = "192.168.100.127";
       config.data = JSON.stringify(config.data);
     }
     if (config.method === "get") {
       if (cookie != null) {
         config.params.cookie = encodeURIComponent(cookie);
       }
+      config.params.readIP = "192.168.100.127";
       config.params = JSON.stringify(config.params);
     }
     return config;
