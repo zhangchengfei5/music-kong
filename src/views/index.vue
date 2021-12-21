@@ -109,12 +109,14 @@
       <!-- 歌曲信息：歌名、歌手、对这首歌收藏 -->
       <div class="song_about">
         <div class="song_info">
-          <p>晴天</p>
-          <span>&nbsp;-&nbsp;周杰伦</span>
+          <p>{{ songName }}</p>
+          <span>&nbsp;-&nbsp;{{ singer }}</span>
         </div>
         <div class="song_action">
           <el-icon color="#333" :size="20"><star /></el-icon>
-          <el-icon color="#333" :size="20"><download /></el-icon>
+          <el-icon color="#333" :size="20" style="margin: 0 0.2rem"
+            ><download
+          /></el-icon>
           <el-icon color="#333" :size="20"><more /></el-icon>
         </div>
       </div>
@@ -122,7 +124,7 @@
       <div class="song_control">
         <!-- 歌曲进度条 -->
         <div class="song_duration">
-          <span>00:00</span>
+          <span>{{ currentDuration }}</span>
           <my-progress
             :precentage="precentAge"
             @click="controlProgress"
@@ -132,7 +134,7 @@
         <!-- 歌曲播放、暂停等 -->
         <div class="song_control_btn">
           <i class="iconfont icon-liebiaoxunhuan"></i>
-          <el-icon color="#666"><caret-left /></el-icon>
+          <el-icon color="#666" @click="switchMusic(1)"><caret-left /></el-icon>
           <el-icon
             class="btn_pause"
             v-if="playStatus"
@@ -143,11 +145,16 @@
           <el-icon class="btn_play" v-else color="#666" @click="controlPlay"
             ><video-play
           /></el-icon>
-          <el-icon color="#666"><caret-right /></el-icon>
+          <el-icon color="#666" @click="switchMusic(0)"
+            ><caret-right
+          /></el-icon>
           <span>词</span>
         </div>
         <!-- 播放音乐 -->
-        <audio id="nowSong" :src="songUrl" autoplay hidden>
+        <audio id="nowSong" autoplay hidden @timeupdate="tUpdate">
+          <source :src="songUrl" type="audio/ogg" />
+          <source :src="songUrl" type="audio/mpeg" />
+          <source :src="songUrl" type="audio/mp4" />
           暂不支持在此浏览器播放音乐
         </audio>
       </div>
@@ -241,14 +248,18 @@ export default {
       // 播放状态 true为播放中显示暂停按钮，false为暂停中显示播放按钮
       playStatus: false,
       // 歌曲播放进度条百分比
-      precentAge: 50,
+      precentAge: 0,
       songList: [],
       // 默认展开菜单
       opends: ["11"],
+      songNowList: [],
+      songIndexId: 0,
       songUrl: "",
-      songUrlList: [],
-      // 歌曲时长
+      songName: "",
+      singer: "",
+      // 歌曲总时长 和 歌曲正确时长
       songDuration: "00:00",
+      currentDuration: "00:00",
     };
   },
   mounted() {
@@ -420,93 +431,145 @@ export default {
       } else {
         this.isLogin = true;
       }
-      // this.isLogin = true;
     },
-    // 点击歌曲播放音乐
-    playSong(song) {
+    // 获取音乐URL
+    getSongUrl(id) {
       let that = this;
-      console.log("传送过来的数据：", song);
+      let timestamp = Date.parse(new Date());
       let songAudio = document.getElementById("nowSong");
-      that.songDuration = util.formatterSongTime(song.time);
-      console.log("这首音乐的时间为：", that.songDuration);
-      // 如果发现链接大于1则不再调取接口
-      if (that.songUrlList.length > 1) {
-        // 如果歌曲是播放状态，则先暂停，然后换Url，在开启播放
-        // 如果歌曲是暂停状态，则直接换Url，然后开启播放
-        if (!songAudio.paused) {
-          songAudio.pause();
-          if (that.songUrlList[song.indexId].url != null) {
-            that.songUrl = that.songUrlList[song.indexId].url;
-          }
-          console.log("歌曲的名字为：", song.name);
-          console.log("上面歌曲的Url: ", that.songUrl);
-          songAudio.play();
-          this.playStatus = true;
-        } else {
-          if (that.songUrlList[song.indexId].url != null) {
-            that.songUrl = that.songUrlList[song.indexId].url;
-            console.log(that.songUrl);
-          } else {
-            console.log("播放错误！");
-          }
-          songAudio.play();
-          this.playStatus = true;
-        }
-        return;
-      }
-      let url = "/song/url";
-      let params = {};
-      params.id = song.id;
+      let songUrl = "/song/url?t=" + timestamp;
+      let songParams = {};
+      songParams.id = id;
       server
-        .post(url, params)
+        .post(songUrl, songParams)
         .then((res) => {
           console.log(res);
           if (res.code != 200) {
             console.log("获取歌曲链接失败");
             return;
           }
-          that.songUrlList = res.data;
-          console.log("歌曲的Url列表", that.songUrlList);
-
-          if (!songAudio.paused) {
-            songAudio.pause();
-            if (res.data[song.indexId].url != null) {
-              that.songUrl = res.data[song.indexId].url;
-            }
-            console.log("歌曲的名字为：", song.name);
-            console.log(that.songUrl);
-            songAudio.play();
-            that.playStatus = true;
+          // url看有没有，没有则提示后跳出
+          if (res.data[0].url != null) {
+            that.songUrl = res.data[0].url;
           } else {
-            if (res.data[song.indexId].url != null) {
-              that.songUrl = res.data[song.indexId].url;
-              songAudio.play();
-              this.playStatus = true;
-              console.log("歌曲的名字为：", song.name);
-              console.log("上面歌曲的Url", that.songUrl);
-            } else {
-              console.log("播放错误！");
-            }
+            this.$message({
+              message: "当前歌曲暂无音源",
+              type: "error",
+              duration: 3000,
+            });
+            that.playStatus = false;
+            songAudio.pause();
+            that.precentAge = 0;
+            that.songDuration = "00:00";
+            that.currentDuration = "00:00";
+            return;
           }
+          // src资源更改后重新加载
+          songAudio.load();
+          // 如果音乐在播放，把播放状态改为播放
+          songAudio.onplay = () => {
+            that.playStatus = true;
+          };
+          // 如果音乐暂停了，把播放状态改为暂停
+          songAudio.onpause = () => {
+            that.playStatus = false;
+          };
+          // 当音乐由于需要缓冲下一帧而停止时触发
+          songAudio.onwaiting = () => {
+            that.playStatus = false;
+          };
         })
         .catch((err) => {
           console.log(err);
         });
     },
 
+    // 点击歌曲播放音乐
+    playSong(song) {
+      let that = this;
+      console.log("传送过来的数据：", song);
+      that.songNowList = song.list;
+      if (song.fee == 0) {
+        this.$message({
+          message: "当前歌曲暂无音源",
+          type: "error",
+          duration: 3000,
+        });
+        return;
+      }
+      console.log("songNowList:", that.songNowList);
+      that.songName = song.name;
+      that.formatterSinger(song.singer);
+      that.imgUrl.songImg = song.picUrl;
+      that.songDuration = util.formatterSongTime(song.time);
+      console.log("这首音乐的时间为：", that.songDuration);
+      that.getSongUrl(song.id);
+    },
+
+    // 播放下一首
+    switchMusic(status) {
+      // status为 0是下一首，其他是上一首
+      if (status == 0) {
+        this.songIndexId += 1;
+      } else {
+        this.songIndexId -= 1;
+      }
+      let nowSong = this.songNowList[this.songIndexId];
+      let id;
+      if (nowSong.fee == 0) {
+        id = nowSong.id + 1;
+        nowSong = this.songNowList[id];
+        this.getSongUrl(id);
+        this.songName = nowSong.name;
+        this.formatterSinger(nowSong.singer);
+        this.imgUrl.songImg = nowSong.picUrl;
+      } else {
+        id = nowSong.id;
+        this.getSongUrl(id);
+        this.songName = nowSong.name;
+        this.formatterSinger(nowSong.singer);
+        this.imgUrl.songImg = nowSong.picUrl;
+      }
+    },
+
+    // 格式化歌手名字
+    formatterSinger(singer) {
+      this.singer = "";
+      singer.forEach((item, index, arr) => {
+        if (arr.length > 1) {
+          if (index != arr.length - 1) {
+            this.singer += item + "/";
+          } else {
+            this.singer += item;
+          }
+        } else {
+          this.singer = item;
+        }
+      });
+    },
+
+    // 在音频/视频（audio/video）的播放位置发生改变时触发
+    tUpdate() {
+      let songAudio = document.getElementById("nowSong");
+      this.currentDuration = util.formatterSongTime(
+        songAudio.currentTime * 1000
+      );
+      this.precentAge = parseInt(
+        (songAudio.currentTime / songAudio.duration) * 100
+      );
+    },
+
     // 控制播放音乐
     controlPlay() {
       let songAudio = document.getElementById("nowSong");
-      // 判断歌曲当前是否暂停了，true为暂停，false没暂停
-      this.playStatus = !songAudio.paused;
-      if (this.playStatus) {
-        songAudio.pause();
-        this.playStatus = false;
-        console.log("当前歌曲暂停状态：", this.playStatus);
-      } else {
-        songAudio.play();
-        this.playStatus = true;
-        console.log("当前歌曲暂停状态：", this.playStatus);
+      let src = songAudio.childNodes[0];
+      // 如果资源不为空，则看音乐是否暂停，如果暂停则播放，如果播放则暂停
+      if (src.src != null && src.src != "") {
+        if (songAudio.paused) {
+          songAudio.play();
+        } else {
+          songAudio.pause();
+        }
       }
     },
 
@@ -590,6 +653,7 @@ export default {
   align-items: center;
   padding: 0.1rem 0.3rem;
   background-color: #cc66ff;
+  z-index: 100;
 }
 /* 登录容器 */
 .login_wrapper {
@@ -683,6 +747,15 @@ export default {
   background-color: #f5f5f5;
 }
 
+.el-sub-menu .el-menu-item {
+  padding: 0 0.2rem !important;
+  min-width: unset;
+  display: block;
+  width: 1.99rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* 底部导航 */
 .home_bottom_wrapper {
   width: 100%;
@@ -709,15 +782,24 @@ export default {
   display: flex;
   flex-direction: column;
   justify-content: space-around;
+  align-items: flex-start;
   margin-left: 0.3rem;
   margin-right: 0.3rem;
 }
 .song_info {
   display: flex;
   font-size: 0.16rem;
+  width: 2rem;
+  white-space: nowrap;
+}
+.song_info > p {
+  line-height: 0.21rem;
 }
 .song_info > span {
   color: #999;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 0.21rem;
 }
 .song_action {
   display: flex;
@@ -741,6 +823,7 @@ export default {
   align-items: center;
 }
 .song_duration > span {
+  width: 0.32rem;
   font-size: 0.12rem;
   color: #999;
 }

@@ -195,19 +195,6 @@ export default {
           console.log(error);
         });
     },
-    // 计算播放量
-    // playCount(count) {
-    //   let play;
-    //   let playNum;
-    //   if (count > 10000) {
-    //     play = Math.round(count / 10000);
-    //     playNum = play + "万";
-    //   } else {
-    //     play = count;
-    //     playNum = play + "";
-    //   }
-    //   return playNum;
-    // },
     // 获取独家放送入口列表
     getPrivateContentList() {
       let that = this;
@@ -216,7 +203,6 @@ export default {
       server
         .post(url, params)
         .then((res) => {
-          console.log(res);
           that.privatecontentList = res.result;
           console.log("独家放送列表入口：", res);
         })
@@ -281,10 +267,9 @@ export default {
   background-color: #fff;
   left: 2.25rem;
   right: 0;
-  top: 0.735rem;
-  padding-top: 0.1rem;
+  top: 0.62rem;
+  padding-top: 0.2rem;
   padding-bottom: 0.08rem;
-  border-top: 1px solid #cc66ff;
 }
 /* 去除标签下面灰色的线 */
 .discover_music_wrapper >>> .el-tabs__nav-wrap::after {

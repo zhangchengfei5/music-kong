@@ -23,7 +23,13 @@ function formatterTime(time) {
 
 function formatterSongTime(time) {
   let minutes = new Date(time).getMinutes();
+  if (minutes < 10) {
+    minutes = "0" + minutes;
+  }
   let seconds = new Date(time).getSeconds();
+  if (seconds < 10) {
+    seconds = "0" + seconds;
+  }
   let songTime = minutes + ":" + seconds;
   return songTime;
 }

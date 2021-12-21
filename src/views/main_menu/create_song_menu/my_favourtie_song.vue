@@ -193,8 +193,7 @@ export default {
       // 喜欢和下载
       like: false,
       download: false,
-      songId: "",
-
+      // 是否在加载
       loading: true,
     };
   },
@@ -238,11 +237,8 @@ export default {
         console.log("传递过来的参数为空");
       } else {
         this.getSlItem();
-        console.log("获取到歌单ID", new Date().getSeconds());
         this.isLineFeed();
-        console.log("判断文字是否超出一行", new Date().getSeconds());
         this.getPlayListSong();
-        console.log("获取到歌单歌曲列表", new Date().getSeconds());
       }
     },
   },
@@ -316,8 +312,8 @@ export default {
 
     // 双击后播放歌曲
     playSong(song, songIndex) {
-      song.id = this.songId;
       song.indexId = songIndex;
+      song.list = this.songList;
       this.$emit("playingSong", song);
     },
 
@@ -339,32 +335,19 @@ export default {
           }
           console.log("获取歌单歌曲成功");
           let songs = res.songs;
-          let sid = "";
-          console.log(songs);
-          // song.id.forEach((id, index) => {
-          //   if (index == song.id.length - 1) {
-          //     sid = sid.concat(id);
-          //   } else {
-          //     sid = sid.concat(id + ",");
-          //   }
-          // });
-          let songList = songs.map((i, index) => {
+          let songList = songs.map((i) => {
             let song = {};
             song.id = i.id;
-            if (index == songs.length - 1) {
-              sid = sid.concat(i.id);
-            } else {
-              sid = sid.concat(i.id + ",");
-            }
             song.name = i.name;
             song.singer = i.ar.map((singer) => {
               return singer.name;
             });
             song.album = i.al.name;
+            song.picUrl = i.al.picUrl;
             song.time = i.dt;
+            song.fee = i.fee;
             return song;
           });
-          that.songId = sid;
           that.songList = songList;
           console.log("歌单歌曲列表my：", that.songList);
           that.loading = false;
@@ -744,6 +727,11 @@ export default {
 
 .mfsl_song_list .list_singer {
   display: flex;
+  align-items: center;
+}
+
+.list_singer > p {
+  line-height: 0.19rem;
 }
 
 .mfsl_song_list .list_singer > p:hover,

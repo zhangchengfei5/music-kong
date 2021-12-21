@@ -22,6 +22,7 @@ songs.name 是歌曲名字
 songs.singer 是歌手数组 songs.singer[index].name 是歌手名字
 songs.al.name 是歌曲专辑名字
 songs.dt 是歌曲时长 单位ms
+song.fee 是歌曲有无音乐 为0 则是无音源 为1 则是需要VIP 为8 则是可以听
 
 3.获取音乐url
 接口地址及示例：/song/url?id=33894312 /song/url?id=405998841,33894312 id是音乐id
