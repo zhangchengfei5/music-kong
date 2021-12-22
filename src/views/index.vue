@@ -498,6 +498,7 @@ export default {
         return;
       }
       console.log("songNowList:", that.songNowList);
+      that.songIndexId = song.indexId;
       that.songName = song.name;
       that.formatterSinger(song.singer);
       that.imgUrl.songImg = song.picUrl;
@@ -515,21 +516,20 @@ export default {
         this.songIndexId -= 1;
       }
       let nowSong = this.songNowList[this.songIndexId];
-      let id;
       if (nowSong.fee == 0) {
-        id = nowSong.id + 1;
-        nowSong = this.songNowList[id];
-        this.getSongUrl(id);
-        this.songName = nowSong.name;
-        this.formatterSinger(nowSong.singer);
-        this.imgUrl.songImg = nowSong.picUrl;
+        if (status == 0) {
+          this.songIndexId += 1;
+        } else {
+          this.songIndexId -= 1;
+        }
+        nowSong = this.songNowList[this.songIndexId];
+        this.getSongUrl(nowSong.id);
       } else {
-        id = nowSong.id;
-        this.getSongUrl(id);
-        this.songName = nowSong.name;
-        this.formatterSinger(nowSong.singer);
-        this.imgUrl.songImg = nowSong.picUrl;
+        this.getSongUrl(nowSong.id);
       }
+      this.songName = nowSong.name;
+      this.formatterSinger(nowSong.singer);
+      this.imgUrl.songImg = nowSong.picUrl;
     },
 
     // 格式化歌手名字
@@ -577,7 +577,9 @@ export default {
     controlProgress() {
       let songAudio = document.getElementById("nowSong");
       let playDuration = songAudio.duration;
-      console.log(playDuration);
+      let cDuration = songAudio.currentTime;
+      console.log(playDuration, cDuration);
+      // let nowPre = parseInt((cDuration / playDuration) * 100);
     },
   },
 };
