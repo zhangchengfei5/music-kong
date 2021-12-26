@@ -1,9 +1,20 @@
 <template>
   <!-- tpbc指transparent background color 透明背景颜色 -->
   <div class="tpbc">
-    <div class="progress-wrapper">
-      <div class="progress" :style="'width:' + precentage + '%'"></div>
-      <div class="pointer" :style="'left:' + precentage + '%'"></div>
+    <div
+      class="progress-wrapper"
+      @dragover="onDragOver"
+      @dragleave="onDragLeave"
+    >
+      <div class="progress" :style="'width:' + tPrecent + '%'"></div>
+      <div
+        class="pointer"
+        :style="'left:' + tPrecent + '%'"
+        draggable="true"
+        @dragstart="dragStart"
+        @drag="onDrag"
+        @dragend="onDragEnd"
+      ></div>
     </div>
   </div>
 </template>
@@ -13,30 +24,101 @@ export default {
   props: {
     precentage: { required: true, default: 0 },
   },
-  // mounted() {
-  //   this.setPointer();
-  // },
-  // computed: {
-  //   precent() {
-  //     return this.precentage;
-  //   },
-  // },
-  // methods: {
-  //   setPointer() {
-  //     const progress = document.getElementsByClassName("progress")[0];
-  //     const pointer = document.getElementsByClassName("pointer")[0];
-  //     progress.style.width = this.precent + "%";
-  //     pointer.style.left = this.precent + "%";
-  //   },
-  // },
-  // watch: {
-  //   precentage(val1, val2) {
-  //     console.log(val1);
-  //     console.log(val2);
-  //     this.setPointer();
-  //     // return this.precentage;
-  //   },
-  // },
+  data() {
+    return {
+      tPrecent: 0,
+      cPrecent: 0,
+      pointerLeft: 0,
+      startX: 0,
+      centerX: 0,
+      endX: 0,
+    };
+  },
+  created() {
+    this.tPrecent = this.precentage;
+    this.cPrecent = this.precentage;
+  },
+  watch: {
+    precentage(now, old) {
+      this.tPrecent = now;
+      this.cPrecent = now;
+      console.log(old);
+    },
+  },
+  methods: {
+    dragStart(e) {
+      // 587 914
+      this.startX = e.clientX;
+      this.centerX = e.clientX;
+      console.log("开始时的宽度距离666：", e.clientX);
+      e.dataTransfer.setData("text/plain", e.target.id);
+    },
+    onDrag(e) {
+      let allProgress = document.querySelector(".progress-wrapper");
+      let progress = document.getElementsByClassName("progress")[0];
+      let pointer = document.getElementsByClassName("pointer")[0];
+      this.endX = e.clientX;
+      let pre;
+      let fp;
+      if (this.centerX - this.endX > 0) {
+        pre = ((this.centerX - this.endX) / allProgress.clientWidth) * 100;
+        fp = this.cPrecent - pre;
+        if (fp < 0) {
+          fp = 0;
+        }
+        progress.style.width = fp + "%";
+        pointer.style.left = fp + "%";
+        this.cPrecent = fp;
+        this.centerX = e.clientX;
+      } else {
+        pre = ((this.endX - this.centerX) / allProgress.clientWidth) * 100;
+        fp = this.cPrecent + pre;
+        if (fp > 100) {
+          fp = 100;
+        }
+        progress.style.width = fp + "%";
+        pointer.style.left = fp + "%";
+        this.cPrecent = fp;
+        this.centerX = e.clientX;
+      }
+    },
+    onDragEnd(e) {
+      console.log("结束时的宽度距离777：", e.clientX);
+      let allProgress = document.querySelector(".progress-wrapper");
+      let progress = document.getElementsByClassName("progress")[0];
+      let pointer = document.getElementsByClassName("pointer")[0];
+      this.endX = e.clientX;
+      console.log("开始-结束是多少：", this.startX - this.endX);
+      console.log("总进度条的宽度：", allProgress.clientWidth);
+      let pre;
+      let fp;
+      if (this.startX - this.endX > 0) {
+        pre = ((this.startX - this.endX) / allProgress.clientWidth) * 100;
+        fp = this.tPrecent - pre;
+        if (fp < 0) {
+          fp = 0;
+        }
+        progress.style.width = fp + "%";
+        pointer.style.left = fp + "%";
+        this.tPrecent = fp;
+        this.cPrecent = fp;
+      } else {
+        pre = ((this.endX - this.startX) / allProgress.clientWidth) * 100;
+        fp = this.tPrecent + pre;
+        if (fp > 100) {
+          fp = 100;
+        }
+        progress.style.width = fp + "%";
+        pointer.style.left = fp + "%";
+        this.tPrecent = fp;
+        this.cPrecent = fp;
+      }
+    },
+    // 让鼠标在拖拽时在父容器内时的鼠标样式变为正常鼠标而不是禁止的样式
+    onDragOver(e) {
+      e.preventDefault();
+    },
+  },
 };
 </script>
 
