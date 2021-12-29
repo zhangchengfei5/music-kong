@@ -46,13 +46,15 @@ export default {
     },
   },
   methods: {
+    // 点击准备拖拽
     dragStart(e) {
       // 587 914
       this.startX = e.clientX;
       this.centerX = e.clientX;
-      console.log("开始时的宽度距离666：", e.clientX);
+      // console.log("开始时的宽度距离666：", e.clientX);
       e.dataTransfer.setData("text/plain", e.target.id);
     },
+    // 拖拽过程中
     onDrag(e) {
       let allProgress = document.querySelector(".progress-wrapper");
       let progress = document.getElementsByClassName("progress")[0];
@@ -66,30 +68,27 @@ export default {
         if (fp < 0) {
           fp = 0;
         }
-        progress.style.width = fp + "%";
-        pointer.style.left = fp + "%";
-        this.cPrecent = fp;
-        this.centerX = e.clientX;
       } else {
         pre = ((this.endX - this.centerX) / allProgress.clientWidth) * 100;
         fp = this.cPrecent + pre;
         if (fp > 100) {
           fp = 100;
         }
-        progress.style.width = fp + "%";
-        pointer.style.left = fp + "%";
-        this.cPrecent = fp;
-        this.centerX = e.clientX;
       }
+      progress.style.width = fp + "%";
+      pointer.style.left = fp + "%";
+      this.cPrecent = fp;
+      this.centerX = e.clientX;
     },
+    // 拖拽结束放下鼠标
     onDragEnd(e) {
-      console.log("结束时的宽度距离777：", e.clientX);
+      // console.log("结束时的宽度距离777：", e.clientX);
       let allProgress = document.querySelector(".progress-wrapper");
       let progress = document.getElementsByClassName("progress")[0];
       let pointer = document.getElementsByClassName("pointer")[0];
       this.endX = e.clientX;
-      console.log("开始-结束是多少：", this.startX - this.endX);
-      console.log("总进度条的宽度：", allProgress.clientWidth);
+      // console.log("开始-结束是多少：", this.startX - this.endX);
+      // console.log("总进度条的宽度：", allProgress.clientWidth);
       let pre;
       let fp;
       if (this.startX - this.endX > 0) {
@@ -98,21 +97,18 @@ export default {
         if (fp < 0) {
           fp = 0;
         }
-        progress.style.width = fp + "%";
-        pointer.style.left = fp + "%";
-        this.tPrecent = fp;
-        this.cPrecent = fp;
       } else {
         pre = ((this.endX - this.startX) / allProgress.clientWidth) * 100;
         fp = this.tPrecent + pre;
         if (fp > 100) {
           fp = 100;
         }
-        progress.style.width = fp + "%";
-        pointer.style.left = fp + "%";
-        this.tPrecent = fp;
-        this.cPrecent = fp;
       }
+      progress.style.width = fp + "%";
+      pointer.style.left = fp + "%";
+      this.tPrecent = fp;
+      this.cPrecent = fp;
+      this.$emit("dragPro", fp);
     },
     // 让鼠标在拖拽时在父容器内时的鼠标样式变为正常鼠标而不是禁止的样式
     onDragOver(e) {

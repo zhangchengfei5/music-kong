@@ -42,6 +42,7 @@
                 /></el-icon>
                 {{ playCount(songlistItem.playCount) }}
               </div>
+              <div class="count_bg"></div>
             </div>
           </div>
         </div>
@@ -67,6 +68,7 @@
               <el-image :src="pclItem.sPicUrl"></el-image>
               <el-icon class="plsp_btn"><video-play /></el-icon>
               <p class="privatecontent_list_title">{{ pclItem.name }}</p>
+              <div class="plsp_bg"></div>
             </div>
           </div>
         </div>
@@ -112,6 +114,7 @@
                 /></el-icon>
                 {{ playCount(mvItem.playCount) }}
               </div>
+              <div class="count_bg"></div>
             </div>
           </div>
         </div>
@@ -393,6 +396,16 @@ export default {
   color: #fff;
   background-color: rgba(0, 0, 0, 0.05);
 }
+.song_list .count_bg,
+.recommend_mv_list .count_bg {
+  height: 0.2rem;
+  background-color: rgba(0, 0, 0, 0.03);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  border-top-right-radius: 0.06rem;
+}
 /* 推荐歌单播放量、推荐MV播放量 */
 .song_list .song_play_count,
 .recommend_mv_list .mv_play_count {
@@ -403,7 +416,6 @@ export default {
   align-items: center;
   font-size: 0.1rem;
   color: #fff;
-  background-color: rgba(0, 0, 0, 0.08);
 }
 .song_play_count .list_play_icon,
 .mv_play_count .list_play_icon {
@@ -429,14 +441,23 @@ export default {
   flex-direction: column;
   position: relative;
 }
-/* 图片右下角的播放按钮 */
+/* 图片左上角角的播放按钮 */
 .privatecontent_list .plsp_btn {
   position: absolute;
   font-size: 0.3rem;
   top: 0.05rem;
   left: 0.05rem;
   color: #fff;
-  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.privatecontent_list .plsp_bg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 0.35rem;
+  /* width: 0.35rem; */
+  background-color: rgba(0, 0, 0, 0.03);
 }
 
 /* 推荐MV外层容器 */

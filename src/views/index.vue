@@ -128,6 +128,7 @@
           <my-progress
             :precentage="precentAge"
             @click="controlProgress"
+            @dragPro="dragProgress"
           ></my-progress>
           <span>{{ songDuration }}</span>
         </div>
@@ -140,9 +141,15 @@
             v-if="playStatus"
             color="#666"
             @click="controlPlay"
+            key="pause-icon"
             ><video-pause
           /></el-icon>
-          <el-icon class="btn_play" v-else color="#666" @click="controlPlay"
+          <el-icon
+            class="btn_play"
+            v-else
+            key="play-icon"
+            color="#666"
+            @click="controlPlay"
             ><video-play
           /></el-icon>
           <el-icon color="#666" @click="switchMusic(0)"
@@ -478,6 +485,10 @@ export default {
           songAudio.onwaiting = () => {
             that.playStatus = false;
           };
+          // 播放位置发生改变时触发
+          songAudio.ontimeupdate = () => {
+            that.playStatus = true;
+          };
         })
         .catch((err) => {
           console.log(err);
@@ -509,6 +520,9 @@ export default {
 
     // 播放下一首
     switchMusic(status) {
+      if (this.songUrl == null || this.songUrl == "") {
+        return;
+      }
       // status为 0是下一首，其他是上一首
       if (status == 0) {
         this.songIndexId += 1;
@@ -562,9 +576,9 @@ export default {
     // 控制播放音乐
     controlPlay() {
       let songAudio = document.getElementById("nowSong");
-      let src = songAudio.childNodes[0];
+      // let src = songAudio.childNodes[0];
       // 如果资源不为空，则看音乐是否暂停，如果暂停则播放，如果播放则暂停
-      if (src.src != null && src.src != "") {
+      if (this.songUrl != null && this.songUrl != "") {
         if (songAudio.paused) {
           songAudio.play();
         } else {
@@ -580,6 +594,15 @@ export default {
       let cDuration = songAudio.currentTime;
       console.log(playDuration, cDuration);
       // let nowPre = parseInt((cDuration / playDuration) * 100);
+    },
+    // 拖拽进度条后跳转播放
+    dragProgress(ct) {
+      if (this.songUrl == "" || this.songUrl == null) {
+        return;
+      }
+      let songAudio = document.getElementById("nowSong");
+      let allDuration = songAudio.duration;
+      songAudio.currentTime = (ct * allDuration) / 100;
     },
   },
 };
