@@ -120,7 +120,60 @@
         </div>
       </el-tab-pane>
       <el-tab-pane label="专属定制" name="2">专属定制</el-tab-pane>
-      <el-tab-pane label="歌单" name="songList">歌单</el-tab-pane>
+      <el-tab-pane label="歌单" name="songList">
+        <div class="gedan-box">
+          <!-- S-头部标签弹出等 -->
+          <div class="song_tag_head">
+            <el-popover :width="500" placement="bottom-start">
+              <div class="song_tag_list_box">
+                <div class="list_one">
+                  <span>语种</span>
+                  <span>风格</span>
+                </div>
+                <div class="list_sec">
+                  <span>华语</span>
+                  <span>欧美</span>
+                  <span>日语</span>
+                </div>
+              </div>
+              <template #reference>
+                <div class="allSongList">
+                  全部歌单 <el-icon><arrow-right /></el-icon>
+                </div>
+              </template>
+            </el-popover>
+            <el-breadcrumb separator=" ">
+              <el-breadcrumb-item>华语</el-breadcrumb-item>
+              <el-breadcrumb-item>流行</el-breadcrumb-item>
+              <el-breadcrumb-item>摇滚</el-breadcrumb-item>
+              <el-breadcrumb-item>民谣</el-breadcrumb-item>
+              <el-breadcrumb-item>电子</el-breadcrumb-item>
+            </el-breadcrumb>
+          </div>
+          <!-- E-头部标签弹出等 -->
+
+          <!-- S-歌单列表 -->
+          <div class="song_list_wrapper" v-loading="topLoading">
+            <div
+              class="song_list"
+              v-for="songlistItem in topSongList"
+              :key="songlistItem.id"
+            >
+              <el-image :src="songlistItem.coverImgUrl"> </el-image>
+              <el-icon class="song_play_btn"><video-play /></el-icon>
+              <p class="song_list_title">{{ songlistItem.name }}</p>
+              <div class="song_play_count">
+                <el-icon class="list_play_icon" color="#fff"
+                  ><video-play
+                /></el-icon>
+                {{ playCount(songlistItem.playCount) }}
+              </div>
+              <div class="count_bg"></div>
+            </div>
+          </div>
+          <!-- E-歌单列表 -->
+        </div>
+      </el-tab-pane>
       <el-tab-pane label="排行榜" name="4">排行榜</el-tab-pane>
       <el-tab-pane label="歌手" name="5">歌手</el-tab-pane>
       <el-tab-pane label="最新音乐" name="6">最新音乐</el-tab-pane>
@@ -148,7 +201,18 @@ export default {
       privatecontentList: [],
       // 推荐MV列表
       recommendMvList: [],
+      // 歌单标签页歌单列表
+      topSongList: [],
+      topLoading: false,
     };
+  },
+  watch: {
+    activeName: function (newVal, oldVal) {
+      if (newVal == "songList") {
+        this.getTopSongList();
+        console.log(oldVal);
+      }
+    },
   },
   mounted() {
     this.getBanner();
@@ -231,6 +295,26 @@ export default {
     toRecommendSongList() {
       this.activeName = "songList";
     },
+    // 获取推荐歌单
+    getTopSongList() {
+      let that = this;
+      that.topLoading = true;
+      // 默认取出50条，设置limit可以设置取出条数 设置offset可以设置页数 order: 可选值为 'new' 和 'hot', 分别对应最新和最热 , 默认为 'hot'
+      let order = "hot";
+      let limit = 50;
+      let url = "/top/playlist?limit=" + limit + "&order=" + order;
+      var params = {};
+      server
+        .post(url, params)
+        .then((res) => {
+          that.topSongList = res.playlists;
+          that.topLoading = false;
+          console.log("歌单(精选)：", res);
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    },
   },
 };
 </script>
@@ -301,8 +385,10 @@ export default {
   overflow-y: auto;
   overflow-x: auto;
   padding: 0.65rem 0 0.1rem;
+  position: relative;
 }
 
+/* 个性推荐标签页—————————————————————————————————————————————————————————————————————————————————————————— */
 /* 轮播图容器的高度 */
 .el-tabs >>> .el-carousel__container {
   height: 1.8rem;
@@ -341,7 +427,7 @@ export default {
   color: #303133;
 }
 /* 推荐歌单列表外层容器 */
-.recommend_song_wrapper .song_list_wrapper {
+.song_list_wrapper {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   row-gap: 0.2rem;
@@ -506,5 +592,67 @@ export default {
 .mv_list_artistName > p:hover {
   cursor: pointer;
   color: #303133;
+}
+
+/* 歌单标签页—————————————————————————————————————————————————————————————————————————————————————————— */
+.gedan-box {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overflow-y: auto;
+  /* 隐藏滚动条 */
+  scrollbar-width: none; /* firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+/* 隐藏滚动条 */
+.gedan-box::-webkit-scrollbar {
+  /* display: none; */
+  background-color: #fff;
+  width: 0.04rem;
+}
+/* 头部标签容器 */
+.song_tag_head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.1rem;
+}
+body >>> .el-popper.is-light {
+  left: 210px !important;
+}
+.gedan-box >>> .el-popper__arrow {
+  display: none;
+}
+/* 标签弹出容器 */
+.song_tag_list_box {
+  display: flex;
+}
+/* 第一列容器 */
+.song_tag_list_box .list_one {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-right: 0.1rem;
+  border-right: 0.01rem solid #999;
+  width: 1rem;
+}
+/* 子标签第二列容器 */
+.song_tag_list_box .list_sec {
+  display: flex;
+  margin-left: 0.1rem;
+}
+.list_sec > span {
+  margin-right: 0.1rem;
+  cursor: pointer;
+}
+.list_sec > span:hover {
+  color: #cc66ff;
+}
+/* 全部歌单（触发弹出的按钮） */
+.allSongList {
+  cursor: pointer;
+}
+.el-breadcrumb__item {
+  cursor: pointer;
 }
 </style>

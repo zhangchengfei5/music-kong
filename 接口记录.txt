@@ -32,3 +32,4 @@ data[0].type 是歌曲的类型
 
 4.歌单 ( 网友精选碟 )
 接口地址：/top/playlist /top/playlist?limit=10&order=new
+playlists 是歌曲列表
