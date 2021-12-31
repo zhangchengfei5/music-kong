@@ -121,6 +121,7 @@
       </el-tab-pane>
       <el-tab-pane label="专属定制" name="2">专属定制</el-tab-pane>
       <el-tab-pane label="歌单" name="songList">
+        <!-- S-歌单标签页最外层容器 -->
         <div class="gedan-box">
           <!-- S-头部标签弹出等 -->
           <div class="song_tag_head">
@@ -172,7 +173,20 @@
             </div>
           </div>
           <!-- E-歌单列表 -->
+
+          <!-- 分页 -->
+          <el-pagination
+            v-show="!topLoading"
+            v-model:current-page="currentPage"
+            :page-size="100"
+            layout=" prev, pager, next"
+            v-model:total="totalTopSongList"
+            :pager-count="9"
+            background
+          >
+          </el-pagination>
         </div>
+        <!-- E-歌单标签页最外层容器 -->
       </el-tab-pane>
       <el-tab-pane label="排行榜" name="4">排行榜</el-tab-pane>
       <el-tab-pane label="歌手" name="5">歌手</el-tab-pane>
@@ -201,17 +215,34 @@ export default {
       privatecontentList: [],
       // 推荐MV列表
       recommendMvList: [],
+
+      scrollTop: "",
+
       // 歌单标签页歌单列表
       topSongList: [],
+      // 歌单请求条数
+      limit: 100,
+      // 歌单列表加载中
       topLoading: false,
+      // 歌单总数目
+      totalTopSongList: 0,
+      // 当前页数
+      currentPage: 1,
     };
   },
   watch: {
     activeName: function (newVal, oldVal) {
       if (newVal == "songList") {
-        this.getTopSongList();
+        this.getTopSongList(this.currentPage);
         console.log(oldVal);
       }
+    },
+    currentPage: function (newVal, oldVal) {
+      console.log(oldVal);
+      this.getTopSongList(newVal);
+      // 切换页数时回到顶部
+      let wrapper = document.querySelector(".discover_music_wrapper");
+      wrapper.scrollTop = 0;
     },
   },
   mounted() {
@@ -295,19 +326,26 @@ export default {
     toRecommendSongList() {
       this.activeName = "songList";
     },
-    // 获取推荐歌单
-    getTopSongList() {
+    // 获取歌单标签页的歌单
+    getTopSongList(currentPage) {
       let that = this;
       that.topLoading = true;
       // 默认取出50条，设置limit可以设置取出条数 设置offset可以设置页数 order: 可选值为 'new' 和 'hot', 分别对应最新和最热 , 默认为 'hot'
       let order = "hot";
-      let limit = 50;
-      let url = "/top/playlist?limit=" + limit + "&order=" + order;
+      let limit = that.limit;
+      let offset = currentPage;
+      // let url = "/top/playlist?limit=" + limit + "&order=" + order;
+      let timestamp = Date.parse(new Date());
+      let url = "/top/playlist?t=" + timestamp;
       var params = {};
+      params.offset = offset;
+      params.limit = limit;
+      params.order = order;
       server
         .post(url, params)
         .then((res) => {
           that.topSongList = res.playlists;
+          that.totalTopSongList = res.total;
           that.topLoading = false;
           console.log("歌单(精选)：", res);
         })
@@ -598,6 +636,9 @@ export default {
 .gedan-box {
   width: 100%;
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   overflow: hidden;
   overflow-y: auto;
   /* 隐藏滚动条 */
@@ -616,6 +657,7 @@ export default {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 0.1rem;
+  width: 100%;
 }
 body >>> .el-popper.is-light {
   left: 210px !important;
