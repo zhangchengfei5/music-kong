@@ -30,17 +30,17 @@
           <div class="song_list_wrapper">
             <div
               class="song_list"
-              v-for="songlistItem in recommendSongList"
-              :key="songlistItem.id"
+              v-for="slItem in recommendSongList"
+              :key="slItem.id"
             >
-              <el-image :src="songlistItem.picUrl"> </el-image>
+              <el-image :src="slItem.picUrl"> </el-image>
               <el-icon class="song_play_btn"><video-play /></el-icon>
-              <p class="song_list_title">{{ songlistItem.name }}</p>
+              <p class="song_list_title">{{ slItem.name }}</p>
               <div class="song_play_count">
                 <el-icon class="list_play_icon" color="#fff"
                   ><video-play
                 /></el-icon>
-                {{ playCount(songlistItem.playCount) }}
+                {{ playCount(slItem.playcount) }}
               </div>
               <div class="count_bg"></div>
             </div>
@@ -159,6 +159,7 @@
               class="song_list"
               v-for="songlistItem in topSongList"
               :key="songlistItem.id"
+              @click="goDetailSongList(songlistItem)"
             >
               <el-image :src="songlistItem.coverImgUrl"> </el-image>
               <el-icon class="song_play_btn"><video-play /></el-icon>
@@ -231,12 +232,14 @@ export default {
     };
   },
   watch: {
+    // 标签改变后的页面变动
     activeName: function (newVal, oldVal) {
       if (newVal == "songList") {
         this.getTopSongList(this.currentPage);
         console.log(oldVal);
       }
     },
+    // 歌单列表页数变动后页面回到顶部
     currentPage: function (newVal, oldVal) {
       console.log(oldVal);
       this.getTopSongList(newVal);
@@ -276,23 +279,49 @@ export default {
           console.log(error);
         });
     },
-    // 获取推荐歌单
+    // 获取每日推荐歌单
     getRecommendSongList() {
       let that = this;
       // 默认取出30条，设置limit可以设置取出条数
-      let limit = 10;
-      let url = "/personalized?limit=" + limit;
+      // let limit = 10;
+      // let url = "/personalized?limit=" + limit;
+      let url = "/recommend/resource";
       var params = {};
       server
         .post(url, params)
         .then((res) => {
-          that.recommendSongList = res.result;
-          console.log("推荐歌单：", res);
+          console.log("每日推荐歌单:", res);
+          if (res.code != 200) {
+            console.log("获取每日推荐歌单失败");
+            return;
+          }
+          // 获取到11条数据，去掉最开始的那条数据
+          let rsList = res.recommend;
+          rsList.shift();
+          that.recommendSongList = rsList;
+          console.log("推荐歌单：", rsList);
         })
         .catch((error) => {
           console.log(error);
         });
     },
+    // 获取推荐歌单详情
+    // getRsListDetail() {
+    //   let that = this;
+    //   // 默认取出30条，设置limit可以设置取出条数
+    //   let limit = 10;
+    //   let url = "/personalized?limit=" + limit;
+    //   var params = {};
+    //   server
+    //     .post(url, params)
+    //     .then((res) => {
+    //       that.recommendSongList = res.result;
+    //       console.log("推荐歌单：", res);
+    //     })
+    //     .catch((error) => {
+    //       console.log(error);
+    //     });
+    // },
     // 获取独家放送入口列表
     getPrivateContentList() {
       let that = this;
@@ -352,6 +381,12 @@ export default {
         .catch((error) => {
           console.log(error);
         });
+    },
+    // 跳转到歌单详情
+    goDetailSongList(slItem) {
+      let d = JSON.stringify(slItem);
+      let songItem = encodeURIComponent(d);
+      this.$router.push("/my_favourtie_song?slItem=" + songItem);
     },
   },
 };

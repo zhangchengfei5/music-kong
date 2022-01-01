@@ -40,7 +40,9 @@
 
       <!-- S-搜索 -->
       <div class="search_wrapper">
-        <el-icon color="#e6e6e6" :size="25"><arrow-left /></el-icon>
+        <el-icon color="#e6e6e6" :size="25" @click="goBack"
+          ><arrow-left
+        /></el-icon>
         <el-input v-model="song" placeholder="搜索" clearable>
           <template #prefix>
             <el-icon class="el-input__icon"><search /></el-icon>
@@ -127,7 +129,6 @@
           <span>{{ currentDuration }}</span>
           <my-progress
             :precentage="precentAge"
-            @click="controlProgress"
             @dragPro="dragProgress"
           ></my-progress>
           <span>{{ songDuration }}</span>
@@ -383,7 +384,7 @@ export default {
           console.log(err);
         });
     },
-    //  点击菜单跳转页面
+    //  点击左边导航菜单跳转页面
     onClickMenu(index) {
       switch (Number(index)) {
         case 0:
@@ -573,7 +574,7 @@ export default {
       );
     },
 
-    // 控制播放音乐
+    // 控制播放音乐 (播放、暂停等)
     controlPlay() {
       let songAudio = document.getElementById("nowSong");
       // let src = songAudio.childNodes[0];
@@ -587,14 +588,6 @@ export default {
       }
     },
 
-    // 控制播放时长等功能
-    controlProgress() {
-      let songAudio = document.getElementById("nowSong");
-      let playDuration = songAudio.duration;
-      let cDuration = songAudio.currentTime;
-      console.log(playDuration, cDuration);
-      // let nowPre = parseInt((cDuration / playDuration) * 100);
-    },
     // 拖拽进度条后跳转播放
     dragProgress(ct) {
       if (this.songUrl == "" || this.songUrl == null) {
@@ -603,6 +596,11 @@ export default {
       let songAudio = document.getElementById("nowSong");
       let allDuration = songAudio.duration;
       songAudio.currentTime = (ct * allDuration) / 100;
+    },
+
+    // 回到上一页
+    goBack() {
+      this.$router.go(-1);
     },
   },
 };

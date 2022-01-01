@@ -40,6 +40,7 @@
         <!-- 歌单简介 -->
         <div class="mfst_describe">
           <p v-if="tags != [] ? tags.length > 0 : ''">
+            标签 :
             <span v-for="(tagItem, tagIndex) in tags" :key="tagIndex"
               >{{ tagItem }}
               {{
@@ -198,10 +199,12 @@ export default {
     };
   },
   created() {
+    // 获取歌单数据
     this.getSlItem();
   },
   mounted() {
     this.isLineFeed();
+    // 获取歌单所有歌曲
     this.getPlayListSong();
   },
   computed: {
@@ -248,6 +251,7 @@ export default {
       // 获取到传递过来的歌单对象
       let listItem = decodeURIComponent(this.$route.query.slItem);
       this.slItem = JSON.parse(listItem);
+      console.log("传过来的歌单对象数据233", this.slItem);
       if (Object.keys(this.slItem).length > 0) {
         this.creator = this.slItem.creator;
         this.tags = this.slItem.tags;
@@ -512,6 +516,7 @@ export default {
   padding-right: 0.2rem;
   user-select: none;
   color: #606266;
+  margin-bottom: 5px;
 }
 /* 标签 */
 .mfst_describe > p:first-child > span {

@@ -39,10 +39,9 @@ export default {
     this.cPrecent = this.precentage;
   },
   watch: {
-    precentage(now, old) {
+    precentage(now) {
       this.tPrecent = now;
       this.cPrecent = now;
-      console.log(old);
     },
   },
   methods: {
