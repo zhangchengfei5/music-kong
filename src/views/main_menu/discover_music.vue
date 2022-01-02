@@ -32,6 +32,7 @@
               class="song_list"
               v-for="slItem in recommendSongList"
               :key="slItem.id"
+              @click="getRcListDetail(slItem.id)"
             >
               <el-image :src="slItem.picUrl"> </el-image>
               <el-icon class="song_play_btn"><video-play /></el-icon>
@@ -40,7 +41,7 @@
                 <el-icon class="list_play_icon" color="#fff"
                   ><video-play
                 /></el-icon>
-                {{ playCount(slItem.playcount) }}
+                {{ playCount(slItem.playCount) }}
               </div>
               <div class="count_bg"></div>
             </div>
@@ -197,15 +198,11 @@
 </template>
 
 <script>
-import { ArrowRight, VideoPlay } from "@element-plus/icons";
 import server from "../../utils/http.js";
 import util from "@/utils/util.js";
 
 export default {
-  components: {
-    ArrowRight,
-    VideoPlay,
-  },
+  components: {},
   data() {
     return {
       activeName: "1",
@@ -279,27 +276,31 @@ export default {
           console.log(error);
         });
     },
-    // 获取每日推荐歌单
+    // 获取推荐歌单
     getRecommendSongList() {
       let that = this;
       // 默认取出30条，设置limit可以设置取出条数
-      // let limit = 10;
-      // let url = "/personalized?limit=" + limit;
-      let url = "/recommend/resource";
+      let limit = 10;
+      let url = "/personalized?";
+      // let timestamp = Date.parse(new Date());
+      // let url = "/recommend/resource?t=" + timestamp;
       var params = {};
+      params.limit = limit;
       server
         .post(url, params)
         .then((res) => {
-          console.log("每日推荐歌单:", res);
+          console.log("推荐歌单:", res);
           if (res.code != 200) {
-            console.log("获取每日推荐歌单失败");
+            console.log("获取推荐歌单失败");
             return;
           }
+          that.recommendSongList = res.result;
+          console.log("推荐歌单：", res);
           // 获取到11条数据，去掉最开始的那条数据
-          let rsList = res.recommend;
-          rsList.shift();
-          that.recommendSongList = rsList;
-          console.log("推荐歌单：", rsList);
+          // let rsList = res.recommend;
+          // rsList.shift();
+          // that.recommendSongList = rsList;
+          // console.log("推荐歌单：", rsList);
         })
         .catch((error) => {
           console.log(error);
@@ -315,6 +316,10 @@ export default {
     //   server
     //     .post(url, params)
     //     .then((res) => {
+    // if (res.code != 200) {
+    //       console.log("获取每日推荐歌单失败");
+    //       return;
+    //     }
     //       that.recommendSongList = res.result;
     //       console.log("推荐歌单：", res);
     //     })
@@ -330,6 +335,10 @@ export default {
       server
         .post(url, params)
         .then((res) => {
+          if (res.code != 200) {
+            console.log("获取独家放送入口列表失败");
+            return;
+          }
           that.privatecontentList = res.result;
           console.log("独家放送列表入口：", res);
         })
@@ -344,6 +353,10 @@ export default {
       server
         .post(url)
         .then((res) => {
+          if (res.code != 200) {
+            console.log("获取推荐MV失败");
+            return;
+          }
           that.recommendMvList = res.result;
           console.log("推荐MV：", res);
         })
@@ -373,6 +386,10 @@ export default {
       server
         .post(url, params)
         .then((res) => {
+          if (res.code != 200) {
+            console.log("获取歌单标签页的歌单失败");
+            return;
+          }
           that.topSongList = res.playlists;
           that.totalTopSongList = res.total;
           that.topLoading = false;
@@ -382,11 +399,32 @@ export default {
           console.log(error);
         });
     },
-    // 跳转到歌单详情
+    // 歌单标签页的歌单跳转到歌单详情
     goDetailSongList(slItem) {
       let d = JSON.stringify(slItem);
       let songItem = encodeURIComponent(d);
       this.$router.push("/my_favourtie_song?slItem=" + songItem);
+    },
+    // 获取推荐歌单的歌单详情
+    getRcListDetail(id) {
+      let that = this;
+      // 默认取出30条，设置limit可以设置取出条数
+      let url = "/playlist/detail";
+      var params = {};
+      params.id = id;
+      server
+        .post(url, params)
+        .then((res) => {
+          console.log("推荐歌单的歌单详情：", res);
+          if (res.code != 200) {
+            console.log("获取推荐歌单的歌单详情失败");
+            return;
+          }
+          that.goDetailSongList(res.playlist);
+        })
+        .catch((error) => {
+          console.log(error);
+        });
     },
   },
 };

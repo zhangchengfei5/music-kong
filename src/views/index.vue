@@ -177,23 +177,6 @@
 </template>
 
 <script>
-import {
-  ArrowLeft,
-  Search,
-  Microphone,
-  Bell,
-  Close,
-  Setting,
-  FullScreen,
-  Star,
-  Download,
-  More,
-  CaretLeft,
-  CaretRight,
-  Expand,
-  VideoPlay,
-  VideoPause,
-} from "@element-plus/icons";
 import myProgress from "../components/my-progress.vue";
 import server from "../utils/http.js";
 import util from "@/utils/util.js";
@@ -201,21 +184,6 @@ import util from "@/utils/util.js";
 export default {
   components: {
     myProgress,
-    ArrowLeft,
-    Search,
-    Microphone,
-    Bell,
-    Close,
-    Setting,
-    FullScreen,
-    Star,
-    Download,
-    More,
-    CaretLeft,
-    CaretRight,
-    Expand,
-    VideoPlay,
-    VideoPause,
   },
   data() {
     return {

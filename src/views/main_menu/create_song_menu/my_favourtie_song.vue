@@ -154,29 +154,12 @@
 </template>
 
 <script>
-import {
-  CaretRight,
-  FolderAdd,
-  FolderChecked,
-  Share,
-  CaretBottom,
-  CaretTop,
-  Download,
-} from "@element-plus/icons";
 // import util from "../../../utils/util.js";
 import util from "@/utils/util.js";
 import server from "@/utils/http.js";
 
 export default {
-  components: {
-    CaretRight,
-    FolderAdd,
-    FolderChecked,
-    Share,
-    CaretBottom,
-    Download,
-    CaretTop,
-  },
+  components: {},
   emits: ["playingSong"],
   data() {
     return {
