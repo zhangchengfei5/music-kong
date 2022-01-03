@@ -190,7 +190,36 @@
         </div>
         <!-- E-歌单标签页最外层容器 -->
       </el-tab-pane>
-      <el-tab-pane label="排行榜" name="4">排行榜</el-tab-pane>
+      <el-tab-pane label="排行榜" name="rank">
+        <div class="ranking-box" v-loading="rankLoading">
+          <p>官方榜</p>
+          <div
+            class="official-box"
+            v-for="(item, index) in officicalList"
+            :key="index"
+          >
+            <div class="ranking-list-box">
+              <div class="ranking-list-left">
+                <img :src="item.coverImgUrl" alt="" />
+              </div>
+              <div class="ranking-list-right">
+                <div
+                  class="rank-list-box"
+                  v-for="(secItem, secIndex) in item.tracks"
+                  :key="secIndex"
+                >
+                  <p>
+                    <em>{{ secIndex + 1 }}</em> {{ secItem.first }}
+                    <span>(《英雄联盟：双城之战》动画剧集中文主题曲)</span>
+                  </p>
+                  <i>{{ secItem.second }}</i>
+                </div>
+              </div>
+            </div>
+            <span>查看全部</span>
+          </div>
+        </div>
+      </el-tab-pane>
       <el-tab-pane label="歌手" name="5">歌手</el-tab-pane>
       <el-tab-pane label="最新音乐" name="6">最新音乐</el-tab-pane>
     </el-tabs>
@@ -226,14 +255,28 @@ export default {
       totalTopSongList: 0,
       // 当前页数
       currentPage: 1,
+
+      // 排行榜标签页官方榜
+      officicalList: [],
+      globalList: [],
+      rankLoading: true,
     };
   },
   watch: {
     // 标签改变后的页面变动
     activeName: function (newVal, oldVal) {
-      if (newVal == "songList") {
-        this.getTopSongList(this.currentPage);
-        console.log(oldVal);
+      console.log(oldVal);
+      switch (newVal) {
+        case "songList":
+          this.getTopSongList(this.currentPage);
+          break;
+        case "rank":
+          this.getRankingList();
+          console.log("确实成功切换到了排行榜标签页");
+          break;
+
+        default:
+          break;
       }
     },
     // 歌单列表页数变动后页面回到顶部
@@ -276,14 +319,13 @@ export default {
           console.log(error);
         });
     },
+
     // 获取推荐歌单
     getRecommendSongList() {
       let that = this;
       // 默认取出30条，设置limit可以设置取出条数
       let limit = 10;
       let url = "/personalized?";
-      // let timestamp = Date.parse(new Date());
-      // let url = "/recommend/resource?t=" + timestamp;
       var params = {};
       params.limit = limit;
       server
@@ -295,38 +337,12 @@ export default {
             return;
           }
           that.recommendSongList = res.result;
-          console.log("推荐歌单：", res);
-          // 获取到11条数据，去掉最开始的那条数据
-          // let rsList = res.recommend;
-          // rsList.shift();
-          // that.recommendSongList = rsList;
-          // console.log("推荐歌单：", rsList);
         })
         .catch((error) => {
           console.log(error);
         });
     },
-    // 获取推荐歌单详情
-    // getRsListDetail() {
-    //   let that = this;
-    //   // 默认取出30条，设置limit可以设置取出条数
-    //   let limit = 10;
-    //   let url = "/personalized?limit=" + limit;
-    //   var params = {};
-    //   server
-    //     .post(url, params)
-    //     .then((res) => {
-    // if (res.code != 200) {
-    //       console.log("获取每日推荐歌单失败");
-    //       return;
-    //     }
-    //       that.recommendSongList = res.result;
-    //       console.log("推荐歌单：", res);
-    //     })
-    //     .catch((error) => {
-    //       console.log(error);
-    //     });
-    // },
+
     // 获取独家放送入口列表
     getPrivateContentList() {
       let that = this;
@@ -346,6 +362,7 @@ export default {
           console.log(error);
         });
     },
+
     // 获取推荐MV
     getRecommendMvList() {
       let that = this;
@@ -364,10 +381,12 @@ export default {
           console.log(error);
         });
     },
-    // 点击跳转到歌单标签页
+
+    // 个性推荐页里的推荐歌单点击跳转到歌单标签页
     toRecommendSongList() {
       this.activeName = "songList";
     },
+
     // 获取歌单标签页的歌单
     getTopSongList(currentPage) {
       let that = this;
@@ -376,7 +395,6 @@ export default {
       let order = "hot";
       let limit = that.limit;
       let offset = currentPage;
-      // let url = "/top/playlist?limit=" + limit + "&order=" + order;
       let timestamp = Date.parse(new Date());
       let url = "/top/playlist?t=" + timestamp;
       var params = {};
@@ -425,6 +443,24 @@ export default {
         .catch((error) => {
           console.log(error);
         });
+    },
+
+    // 所有榜单
+    getRankingList() {
+      let that = this;
+      let params = {};
+      server.post("/toplist/detail", params).then((res) => {
+        console.log("所有榜单：", res);
+        if (res.code != 200) {
+          that.$message.error("获取所有榜单失败");
+          return;
+        }
+        that.rankLoading = false;
+        let allList = res.list;
+        that.officicalList = allList.splice(0, 4);
+        that.globalList = allList;
+        console.log("官方榜：", that.officicalList);
+      });
     },
   },
 };
@@ -733,7 +769,7 @@ export default {
   width: 100%;
 }
 body >>> .el-popper.is-light {
-  left: 210px !important;
+  left: 2.1rem !important;
 }
 .gedan-box >>> .el-popper__arrow {
   display: none;
@@ -769,5 +805,79 @@ body >>> .el-popper.is-light {
 }
 .el-breadcrumb__item {
   cursor: pointer;
+}
+
+/* 排行榜标签页—————————————————————————————————————————————————————————————————————————————————————————— */
+/* 排行榜最外层容器 */
+.ranking-box {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+.ranking-box > p {
+  margin-bottom: 0.1rem;
+}
+/* 官方榜容器 */
+.official-box {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+.official-box > span {
+  margin-left: 1.5rem;
+  font-size: 0.14rem;
+  color: #999;
+  cursor: pointer;
+  margin-bottom: 0.1rem;
+}
+/* 列表容器 */
+.ranking-list-box {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.1rem;
+}
+/* 列表左边图片 */
+.ranking-list-left img {
+  width: 1rem;
+  height: 1rem;
+  object-fit: cover;
+  border-radius: 0.06rem;
+}
+/* 列表右边歌曲 */
+.ranking-list-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+  margin-left: 0.5rem;
+  height: 1rem;
+}
+/* 歌曲容器 */
+.rank-list-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.14rem;
+}
+.rank-list-box > p {
+  font-style: normal;
+}
+.rank-list-box em {
+  font-style: normal;
+  color: #cc66ff;
+  font-weight: bold;
+}
+.rank-list-box span {
+  color: #999;
+}
+.rank-list-box > i {
+  font-style: normal;
+  color: #999;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  width: 3.4rem;
+  text-align: right;
 }
 </style>

@@ -428,7 +428,7 @@ export default {
           if (res.data[0].url != null) {
             that.songUrl = res.data[0].url;
           } else {
-            this.$message({
+            that.$message({
               message: "当前歌曲暂无音源",
               type: "error",
               duration: 3000,
