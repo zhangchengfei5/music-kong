@@ -71,6 +71,12 @@ const routes = [
         component: () =>
           import("../views/main_menu/create_song_menu/my_favourtie_song"),
       },
+      {
+        path: "/album_song",
+        name: "album_song",
+        component: () =>
+          import("../views/main_menu/create_song_menu/album_song"),
+      },
     ],
   },
 ];
