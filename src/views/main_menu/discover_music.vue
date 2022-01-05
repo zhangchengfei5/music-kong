@@ -1,5 +1,5 @@
 <template>
-  <div class="discover_music_wrapper">
+  <div class="discover_music_wrapper" @scroll="getScrollData">
     <el-tabs v-model="activeName">
       <!-- 个性推荐页 -->
       <el-tab-pane label="个性推荐" name="1">
@@ -247,19 +247,47 @@
           </div>
         </div>
       </el-tab-pane>
-      <el-tab-pane label="歌手" name="5">
-        <div class="singer-box">
-          <!-- language -->
+      <el-tab-pane label="歌手" name="singer">
+        <div class="singer-box" id="singerBox">
+          <!-- language语种 -->
           <div class="lang-tag-box">
             <p>语种：</p>
-            <el-radio-group v-model="langRadio">
-              <el-radio-button label="全部"></el-radio-button>
-              <el-radio-button label="华语"></el-radio-button>
-              <el-radio-button label="欧美"></el-radio-button>
-              <el-radio-button label="日本"></el-radio-button>
-              <el-radio-button label="韩国"></el-radio-button>
-              <el-radio-button label="其他"></el-radio-button>
+            <el-radio-group v-model="langRadio" @change="selectSingerType">
+              <el-radio-button label="-1">全部</el-radio-button>
+              <el-radio-button label="7">华语</el-radio-button>
+              <el-radio-button label="96">欧美</el-radio-button>
+              <el-radio-button label="8">日本</el-radio-button>
+              <el-radio-button label="16">韩国</el-radio-button>
+              <el-radio-button label="0">其他</el-radio-button>
             </el-radio-group>
+          </div>
+          <!-- 分类 -->
+          <div class="lang-tag-box">
+            <p>分类：</p>
+            <el-radio-group v-model="typeRadio" @change="selectSingerType">
+              <el-radio-button label="-1">全部</el-radio-button>
+              <el-radio-button label="1">男歌手</el-radio-button>
+              <el-radio-button label="2">女歌手</el-radio-button>
+              <el-radio-button label="3">乐队组合</el-radio-button>
+            </el-radio-group>
+          </div>
+          <!-- 筛选 -->
+          <div class="lang-tag-box">
+            <p>筛选：</p>
+            <el-radio-group v-model="filtrateRadio" @change="selectSingerType">
+              <el-radio-button
+                v-for="i in filtrateArr"
+                :key="i"
+                :label="i.value"
+                >{{ i.name }}</el-radio-button
+              >
+            </el-radio-group>
+          </div>
+          <div class="singer-list-box" v-loading="singerLoading">
+            <div class="singer" v-for="singer in singerData" :key="singer.id">
+              <img :src="singer.picUrl" alt="" />
+              <p>{{ singer.name }}</p>
+            </div>
           </div>
         </div>
       </el-tab-pane>
@@ -351,8 +379,6 @@ export default {
       // 推荐MV列表
       recommendMvList: [],
 
-      scrollTop: "",
-
       // 歌单标签页歌单列表
       topSongList: [],
       // 歌单请求条数
@@ -373,7 +399,49 @@ export default {
       // 是否不是第一次加载
       rankStatus: false,
 
-      langRadio: "全部",
+      // 歌手标签页的标签
+      singerStatus: false,
+      singerLoading: true,
+      langRadio: -1,
+      typeRadio: -1,
+      filtrateRadio: -1,
+      filtrateArr: [
+        { name: "热门", value: -1 },
+        { name: "A", value: "a" },
+        { name: "B", value: "b" },
+        { name: "C", value: "c" },
+        { name: "D", value: "d" },
+        { name: "E", value: "e" },
+        { name: "F", value: "f" },
+        { name: "G", value: "g" },
+        { name: "H", value: "h" },
+        { name: "I", value: "i" },
+        { name: "J", value: "j" },
+        { name: "K", value: "k" },
+        { name: "L", value: "l" },
+        { name: "M", value: "m" },
+        { name: "N", value: "n" },
+        { name: "O", value: "o" },
+        { name: "P", value: "p" },
+        { name: "Q", value: "q" },
+        { name: "R", value: "r" },
+        { name: "R", value: "s" },
+        { name: "T", value: "t" },
+        { name: "U", value: "u" },
+        { name: "V", value: "v" },
+        { name: "W", value: "w" },
+        { name: "X", value: "x" },
+        { name: "Y", value: "y" },
+        { name: "Z", value: "z" },
+        { name: "#", value: 0 },
+      ],
+      // 歌手数据
+      singerData: [],
+      // 成功取出的次数
+      scount: 0,
+      // 是否还有更多歌曲
+      more: true,
+      singerTimer: null,
 
       // 最新音乐标签页
       newsLoading: true,
@@ -403,6 +471,12 @@ export default {
           if (!this.rankStatus) {
             this.getRankingList();
             this.rankStatus = true;
+          }
+          break;
+        case "singer":
+          if (!this.singerStatus) {
+            this.getSingerList();
+            this.singerStatus = true;
           }
           break;
         case "newsMusic":
@@ -611,6 +685,93 @@ export default {
         that.globalList = allList;
         console.log("官方榜：", that.officicalList);
       });
+    },
+
+    // 获取歌手标签页的歌手分类列表
+    getSingerList() {
+      if (!this.more) return;
+      console.log("进来了吗");
+      let params = {};
+      /* limit : 返回数量 , 默认为 30 
+        offset : 偏移数量，用于分页 , 如 : 如 :( 页数 -1)*30, 其中 30 为 limit 的值 , 默认为 0 
+        initial: 按首字母索引查找参数,如 /artist/list?type=1&area=96&initial=b 
+        返回内容将以 name 字段开头为 b 或者拼音开头为 b 为顺序排列, 热门传-1,#传 0
+        type 取值:-1 全部 1 男歌手 2女歌手 3乐队
+        area 取值:-1:全部 7华语 96欧美 8:日本 16韩国 0:其他
+      */
+      let limit = 30;
+      //  语种
+      params.area = this.langRadio;
+      // 分类
+      params.type = this.typeRadio;
+      // 筛选
+      params.initial = this.filtrateRadio;
+      params.limit = limit;
+      params.offset = this.scount > 0 ? this.scount * limit : 0;
+      let timestap = Date.now();
+      server
+        .post("/artist/list?t=" + timestap, params)
+        .then((res) => {
+          console.log("歌手分类列表：", res);
+          if (res.code != 200) {
+            this.$message.error("获取歌手列表失败");
+          }
+          // 判断是否还有更多歌手
+          if (res.more) {
+            // 判断是第几次加载
+            this.scount > 0
+              ? (this.singerData = this.singerData.concat(res.artists))
+              : (this.singerData = res.artists);
+            this.scount++;
+          } else {
+            this.more = res.more;
+            this.scount > 0
+              ? (this.singerData = this.singerData.concat(res.artists))
+              : (this.singerData = res.artists);
+          }
+          this.singerLoading = false;
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+
+    // 节流
+    // throttle(func, wait) {
+    //   let args, that;
+    //   let oldTime = 0; // 上一次执行回调的时间戳
+    //   return function () {
+    //     that = this;
+    //     args = arguments;
+    //     let time = +new Date(); //当前的触发回调的时间戳
+    //     if (time - oldTime > wait) {
+    //       func.apply(that, args);
+    //       // 执行完成后把此次的执行事件赋值给上一次的时间
+    //       oldTime = time;
+    //     }
+    //   };
+    // },
+
+    // 滚动到底部则继续加载数据
+    getScrollData() {
+      let list = document.getElementsByClassName("discover_music_wrapper")[0];
+      if (list.scrollHeight - list.scrollTop <= list.clientHeight) {
+        if (this.more) {
+          this.singerLoading = true;
+        }
+        this.getSingerList();
+      }
+    },
+
+    // 分类
+    selectSingerType(val) {
+      console.log(val);
+      this.scount = 0;
+      clearTimeout(this.singerTimer);
+      this.singerTimer = setTimeout(() => {
+        this.singerTimer = null;
+        this.getSingerList();
+      }, 800);
     },
 
     // 切换最新音乐里的标签
@@ -1176,11 +1337,70 @@ body >>> .el-popper.is-light {
   display: flex;
   flex-direction: column;
 }
+/* 语种选择最外层容器 */
 .lang-tag-box {
   display: flex;
   align-items: center;
+  margin-bottom: 0.1rem;
+}
+.lang-tag-box > p {
+  font-size: 0.14rem;
+  line-height: 0.26rem;
+}
+.lang-tag-box >>> .el-radio-button__inner {
+  padding: 0.05rem 0.1rem;
+}
+/* 鼠标移入后文字变色 */
+.lang-tag-box >>> .el-radio-button__inner:hover {
+  color: #cc66ff;
+}
+/* 选中的radio鼠标移入后文字变色 */
+.lang-tag-box
+  >>> .el-radio-button__original-radio:checked
+  + .el-radio-button__inner:hover {
+  color: #fff;
+}
+/* radio选中后的颜色变化 */
+.lang-tag-box
+  >>> .el-radio-button__original-radio:checked
+  + .el-radio-button__inner {
+  background-color: #cc66ff !important;
+  border-color: #cc66ff !important;
+  box-shadow: -1px 0 0 0 #cc66ff !important;
 }
 
+/* 歌手列表 */
+.singer-list-box {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  row-gap: 0.15rem;
+  column-gap: 0.2rem;
+}
+/* 歌手容器 */
+.singer {
+  display: flex;
+  flex-direction: column;
+  width: 1.5rem;
+}
+.singer:hover {
+  cursor: pointer;
+}
+/* 歌手图片 */
+.singer img {
+  width: 100%;
+  height: 1.5rem;
+  border-radius: 0.06rem;
+  object-fit: cover;
+  margin-bottom: 0.1rem;
+}
+/* 歌手名字 */
+.singer p {
+  font-size: 0.14rem;
+  color: #666;
+}
+.singer p:hover {
+  color: #333;
+}
 /* 最新音乐标签页—————————————————————————————————————————————————————————————————————————————————————————— */
 /* 最新音乐最外层容器 */
 .new-music-box {
