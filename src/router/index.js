@@ -77,6 +77,12 @@ const routes = [
         component: () =>
           import("../views/main_menu/create_song_menu/album_song"),
       },
+      {
+        path: "/singer_detail",
+        name: "singer_detail",
+        component: () =>
+          import("../views/main_menu/create_song_menu/singer_detail"),
+      },
     ],
   },
 ];

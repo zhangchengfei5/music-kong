@@ -284,11 +284,17 @@
             </el-radio-group>
           </div>
           <div class="singer-list-box" v-loading="singerLoading">
-            <div class="singer" v-for="singer in singerData" :key="singer.id">
-              <img :src="singer.picUrl" alt="" />
+            <div
+              class="singer"
+              v-for="singer in singerData"
+              :key="singer.id"
+              @click="toSingerDetail(singer.id)"
+            >
+              <img :src="singer.img1v1Url" alt="" />
               <p>{{ singer.name }}</p>
             </div>
           </div>
+          <!-- 到 -->
         </div>
       </el-tab-pane>
       <el-tab-pane label="最新音乐" name="newsMusic">
@@ -730,27 +736,12 @@ export default {
               : (this.singerData = res.artists);
           }
           this.singerLoading = false;
+          // this.$forceUpdate();
         })
         .catch((err) => {
           console.log(err);
         });
     },
-
-    // 节流
-    // throttle(func, wait) {
-    //   let args, that;
-    //   let oldTime = 0; // 上一次执行回调的时间戳
-    //   return function () {
-    //     that = this;
-    //     args = arguments;
-    //     let time = +new Date(); //当前的触发回调的时间戳
-    //     if (time - oldTime > wait) {
-    //       func.apply(that, args);
-    //       // 执行完成后把此次的执行事件赋值给上一次的时间
-    //       oldTime = time;
-    //     }
-    //   };
-    // },
 
     // 滚动到底部则继续加载数据
     getScrollData() {
@@ -763,12 +754,17 @@ export default {
       }
     },
 
+    toSingerDetail(id) {
+      this.$router.push("/singer_detail?id=" + id);
+    },
+
     // 分类
     selectSingerType(val) {
       console.log(val);
-      this.scount = 0;
       clearTimeout(this.singerTimer);
       this.singerTimer = setTimeout(() => {
+        this.scount = 0;
+        this.more = true;
         this.singerTimer = null;
         this.getSingerList();
       }, 800);
@@ -1343,6 +1339,13 @@ body >>> .el-popper.is-light {
   align-items: center;
   margin-bottom: 0.1rem;
 }
+
+.lang-tag-box .el-radio-button {
+  --el-radio-button-checked-background-color: #cc66ff;
+  --el-radio-button-checked-border-color: #cc66ff;
+  border-radius: 0.04rem;
+}
+
 .lang-tag-box > p {
   font-size: 0.14rem;
   line-height: 0.26rem;
@@ -1386,12 +1389,13 @@ body >>> .el-popper.is-light {
   cursor: pointer;
 }
 /* 歌手图片 */
-.singer img {
+.singer > img {
   width: 100%;
   height: 1.5rem;
   border-radius: 0.06rem;
   object-fit: cover;
   margin-bottom: 0.1rem;
+  border: 1px solid #e2e2e2;
 }
 /* 歌手名字 */
 .singer p {

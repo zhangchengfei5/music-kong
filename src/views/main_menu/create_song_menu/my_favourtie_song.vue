@@ -154,7 +154,6 @@
 </template>
 
 <script>
-// import util from "../../../utils/util.js";
 import util from "@/utils/util.js";
 import server from "@/utils/http.js";
 
@@ -632,7 +631,7 @@ export default {
 .shuang {
   background-color: #fff;
 }
-
+/* 列表鼠标移入后 */
 .mfsl_song_list:hover {
   background-color: #f0f1f2;
 }
@@ -640,7 +639,7 @@ export default {
 .mfsl_song_list:active {
   background-color: #e5e5e5;
 }
-
+/* 每一列 */
 .mfsl_song_list td {
   user-select: none;
   padding: 0.1rem;
@@ -661,15 +660,6 @@ export default {
   font-size: 0.14rem;
 }
 
-/* 改变选中行的颜色以及鼠标移入行的颜色 */
-/* .el-tab-pane .el-table {
-  --el-table-current-row-background-color: #e5e5e5;
-  --el-table-row-hover-background-color: #f0f1f2;
-}
-.mfsl_wrapper >>> .el-table td.el-table__cell div {
-  display: flex;
-  align-items: center;
-} */
 /* 喜欢和下载两个icon */
 .mfsl_wrapper >>> i.iconfont.icon-like {
   font-size: 0.24rem;
