@@ -1,35 +1,65 @@
 <template>
-  <div class="singer_detail_wrapper">
-    <!-- 歌手详情页顶部 -->
-    <div class="singer_detail_header">
-      <!-- 歌手照片 -->
-      <img src="../../../assets/images/bottomNav/songImg1.jpg" alt="" />
-      <!-- 歌手详情页顶部右边 -->
-      <div class="sdhr">
-        <!-- 歌手名字 -->
-        <b>陈奕迅</b>
-        <!-- 歌手别称 -->
-        <span>Eason Chen</span>
-        <!-- 操作 -->
-        <div class="sdhr_action">
-          <!-- 收藏 -->
-          <div class="btn">
-            <el-icon v-if="subscribed"><folder-checked /></el-icon>
-            <el-icon v-else><folder-add /></el-icon>
-            <span>{{ subscribed ? "已收藏" : "收藏" }}</span>
-          </div>
-          <!-- 个人主页 -->
-          <div class="btn">
-            <el-icon><user /></el-icon><span>个人主页</span>
+  <div class="singer_detail_wrapper" @scroll="getScrollData">
+    <!-- 顶部 -->
+    <el-skeleton :loading="hotLoading" animated :throttle="500">
+      <template v-slot:template>
+        <div style="display: flex; width: 100%; height: 100%">
+          <el-skeleton-item
+            variant="image"
+            style="width: 1.8rem; height: 1.8rem"
+          />
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              justify-content: space-between;
+              height: 100%;
+              margin-left: 0.3rem;
+            "
+          >
+            <el-skeleton-item variant="text" style="0.5rem" />
+            <el-skeleton-item variant="text" style="1.2rem" />
+            <el-skeleton-item variant="text" style="width: 1rem" />
+            <el-skeleton-item variant="text" style="width: 1.5rem" />
           </div>
         </div>
-        <!-- 歌手的各项数据 -->
-        <p>
-          <em>单曲数: 197</em> <em>专辑数: 152</em> <em>MV数: 94</em>
-          <i>演出数:1</i>
-        </p>
-      </div>
-    </div>
+      </template>
+      <template v-slot:default>
+        <!-- 歌手详情页顶部 -->
+        <div class="singer_detail_header">
+          <!-- 歌手照片 -->
+          <img :src="userData ? userData.avatarUrl : artistData.cover" alt="" />
+          <!-- 歌手详情页顶部右边 -->
+          <div class="sdhr">
+            <!-- 歌手名字 -->
+            <b>{{ artistData.name }}</b>
+            <!-- 歌手别称 -->
+            <span v-if="otherName != ''">{{ otherName }}</span>
+            <!-- 操作 -->
+            <div class="sdhr_action">
+              <!-- 收藏 -->
+              <div class="btn">
+                <el-icon v-if="subscribed"><folder-checked /></el-icon>
+                <el-icon v-else><folder-add /></el-icon>
+                <span>{{ subscribed ? "已收藏" : "收藏" }}</span>
+              </div>
+              <!-- 个人主页 -->
+              <div class="btn">
+                <el-icon><user /></el-icon><span>个人主页</span>
+              </div>
+            </div>
+            <!-- 歌手的各项数据 -->
+            <p>
+              <em>单曲数: {{ artistData.musicSize }}</em>
+              <em>专辑数: {{ artistData.albumSize }}</em>
+              <em>MV数: {{ artistData.mvSize }}</em>
+            </p>
+          </div>
+        </div>
+      </template>
+    </el-skeleton>
+
+    <!-- 歌手详情页主体 -->
     <div class="singer_detail_main">
       <el-tabs v-model="activeName">
         <el-tab-pane label="专辑" name="1">
@@ -77,21 +107,36 @@
                       <p>{{ songItem.name }}</p>
                     </td>
                     <td class="list_time">
-                      <p>{{ formatterSongTime(songItem.dt) }}</p>
+                      <p>{{ formatterSongTime(songItem.time) }}</p>
                     </td>
                   </tr>
                 </tbody>
               </table>
               <span v-if="readMoreStatus" @click="readMore"
-                >查看全部50首 ></span
+                >查看全部{{ hotSongNum }}首 ></span
               >
+            </div>
+          </div>
+          <div
+            class="hot_album_list"
+            v-loading.lock="hALoading && hCount > 0"
+            element-loading-text="加载中..."
+          >
+            <div
+              class="hot_album_box"
+              v-for="aItem in hotAlbums"
+              :key="aItem.id"
+              @click="goAlbumDetail(aItem)"
+            >
+              <img :src="aItem.picUrl" alt="" />
+              <p>{{ aItem.name }}</p>
+              <span>{{ formatterTime(aItem.publishTime) }}</span>
             </div>
           </div>
         </el-tab-pane>
         <el-tab-pane label="MV" name="2"> </el-tab-pane>
         <el-tab-pane label="歌手详情" name="3"> </el-tab-pane>
         <el-tab-pane label="相似歌手" name="4"> </el-tab-pane>
-        <el-tab-pane label="演出" name="5"> </el-tab-pane>
       </el-tabs>
     </div>
   </div>
@@ -113,14 +158,38 @@ export default {
 
       // 歌手ID
       id: 0,
+      // 描述数据
       descData: {},
-      detailData: {},
-      aTopSong: [],
+      // 详细数据
+      artistData: {},
+      userData: {},
+      // 歌手别称
+      otherName: "",
+
+      // 前10首热门
       topSong: [],
+      // 后40首热门
+      aTopSong: [],
+      // 歌手专辑
+      hotAlbums: [],
+      // 第几次获取专辑
+      hCount: 0,
+      hAMore: false,
+      hALoading: true,
+      // 要播放的音乐
+      songList: [],
       readMoreStatus: true,
+      hotSongNum: 0,
     };
   },
   computed: {
+    // 创建时间
+    formatterTime: function () {
+      return function (val) {
+        let date = util.formatterTime(val);
+        return date;
+      };
+    },
     // 格式化歌曲时间
     formatterSongTime: function () {
       return function (time) {
@@ -131,13 +200,18 @@ export default {
   },
   mounted() {
     this.id = this.$route.query.id;
-    this.getSingerDetailData();
+    // 获取歌手详情
+    this.getSingerArtistData();
+    // 获取歌手描述
     this.getSingerDescData();
+    // 获取热门50首
     this.getArtistTopSong();
+    // 获取专辑
+    this.getSingerAlbumData();
   },
   methods: {
     //   获取歌手详情数据
-    getSingerDetailData() {
+    getSingerArtistData() {
       let params = {};
       params.id = this.id;
       server
@@ -147,11 +221,27 @@ export default {
           if (res.code != 200) {
             this.$message.error("获取歌手详情数据失败！");
           }
+          this.artistData = res.data.artist;
+          this.userData = res.data.user;
+          this.getOtherName();
         })
         .catch((err) => {
           console.log(err);
         });
     },
+
+    // 截取歌手别称
+    getOtherName() {
+      let briefDesc = this.artistData.briefDesc;
+      let start = briefDesc.indexOf("（");
+      let end = briefDesc.indexOf("）");
+      if (start == -1 || end == -1) {
+        this.otherName = "";
+      } else {
+        this.otherName = briefDesc.substring(start + 1, end);
+      }
+    },
+
     //   获取歌手描述数据
     getSingerDescData() {
       let params = {};
@@ -183,22 +273,82 @@ export default {
           if (res.code != 200) {
             this.$message.error("获取歌手热门歌曲失败");
           }
-          let songList = res.songs;
+          let songs = res.songs;
+          let songList = songs.map((i) => {
+            let song = {};
+            song.id = i.id;
+            song.name = i.name;
+            song.singer = i.ar.map((singer) => {
+              return singer.name;
+            });
+            song.album = i.al.name;
+            song.picUrl = i.al.picUrl;
+            song.time = i.dt;
+            song.fee = i.fee;
+            return song;
+          });
           //   前10首歌曲
           this.topSong = songList.splice(0, 10);
           //   后40首歌曲
           this.aTopSong = songList;
+          this.songList = this.topSong.concat(this.aTopSong);
           //   查看更多按钮显示
           this.readMoreStatus = true;
           //   加载完成
           this.hotLoading = false;
+          this.hotSongNum = res.songs.length;
         })
         .catch((err) => {
           console.log(err);
         });
     },
 
-    // 查看更多50首
+    // 双击后播放歌曲
+    playSong(song, songIndex) {
+      // console.log("双击成功", song, songIndex);
+      song.indexId = songIndex;
+      song.list = this.songList;
+      this.$emit("playingSong", song);
+    },
+
+    //   获取歌手专辑数据
+    getSingerAlbumData() {
+      // if (!this.hAMore) return;
+      let params = {};
+      let limit = 30;
+      params.id = this.id;
+      params.limit = limit;
+      params.offset = this.hCount * limit;
+      let timestamp = Date.now();
+      server
+        .post("/artist/album?t=" + timestamp, params)
+        .then((res) => {
+          console.log("获取歌手专辑数据", res);
+          if (res.code != 200) {
+            this.$message.error("获取歌手专辑数据失败！");
+          }
+          this.hAMore = res.more;
+          this.hCount++;
+          this.hotAlbums = this.hotAlbums.concat(res.hotAlbums);
+          this.hALoading = false;
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+
+    // 滚动继续获取数据
+    getScrollData() {
+      let list = document.getElementsByClassName("singer_detail_wrapper")[0];
+      if (list.scrollHeight - list.scrollTop <= list.clientHeight) {
+        if (this.hAMore && !this.hALoading) {
+          this.getSingerAlbumData();
+          this.hALoading = true;
+        }
+      }
+    },
+
+    // 查看更多N首
     readMore() {
       this.readMoreStatus = false;
       this.topSong = this.topSong.concat(this.aTopSong);
@@ -217,19 +367,25 @@ export default {
 
     // 点击喜欢歌曲
     songLike(index) {
-      if (this.aTopSong[index].like == 1) {
-        this.aTopSong[index].like = 0;
+      if (this.topSong[index].like == 1) {
+        this.topSong[index].like = 0;
       } else {
-        this.aTopSong[index].like = 1;
+        this.topSong[index].like = 1;
       }
     },
     // 点击下载歌曲
     songDownLoad(index) {
-      if (this.aTopSong[index].download == 1) {
-        this.aTopSong[index].download = 0;
+      if (this.topSong[index].download == 1) {
+        this.topSong[index].download = 0;
       } else {
-        this.aTopSong[index].download = 1;
+        this.topSong[index].download = 1;
       }
+    },
+
+    goAlbumDetail(slItem) {
+      let d = JSON.stringify(slItem);
+      let songItem = encodeURIComponent(d);
+      this.$router.push("/album_song?slItem=" + songItem);
     },
   },
 };
@@ -263,11 +419,11 @@ export default {
   display: flex;
   align-items: center;
   width: 100%;
-  height: 1.8rem;
+  /* height: 100%; */
 }
 .singer_detail_header img {
   width: 1.8rem;
-  height: 100%;
+  height: 1.8rem;
   object-fit: cover;
   margin-right: 0.1rem;
   border-radius: 0.06rem;
@@ -325,11 +481,6 @@ export default {
   font-style: normal;
   margin-right: 0.1rem;
 }
-/* 演出数 */
-.sdhr p > i {
-  font-style: normal;
-  text-decoration: underline;
-}
 
 /* 歌手详情页的主体部分 */
 .singer_detail_main {
@@ -369,9 +520,10 @@ export default {
   display: flex;
   width: 100%;
   height: 100%;
+  margin-bottom: 0.1rem;
 }
 
-.hot_song_box > img {
+.hot_song_box img {
   height: 1.5rem;
   width: 1.5rem;
   object-fit: cover;
@@ -511,5 +663,37 @@ export default {
 .mfsl_song_list .list_time {
   width: 1rem;
   color: #999;
+}
+
+/* 专辑列表 */
+.hot_album_list {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.2rem;
+}
+/* 专辑列表个体容器 */
+.hot_album_box {
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+.hot_album_box img {
+  height: 1.5rem;
+  width: 1.5rem;
+  border-radius: 0.06rem;
+  object-fit: cover;
+  border: 1px solid #e2e2e2;
+}
+.hot_album_box p {
+  font-size: 0.14rem;
+  color: #606266;
+  width: 1.5rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  margin: 0.05rem 0;
+}
+.hot_album_box span {
+  font-size: 0.12rem;
 }
 </style>

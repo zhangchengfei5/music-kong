@@ -120,7 +120,6 @@
           </div>
         </div>
       </el-tab-pane>
-      <el-tab-pane label="专属定制" name="2">专属定制</el-tab-pane>
       <el-tab-pane label="歌单" name="songList">
         <!-- S-歌单标签页最外层容器 -->
         <div class="gedan-box">
@@ -155,7 +154,12 @@
           <!-- E-头部标签弹出等 -->
 
           <!-- S-歌单列表 -->
-          <div class="song_list_wrapper" v-loading="topLoading">
+          <div
+            class="song_list_wrapper"
+            v-loading="topLoading"
+            element-loading-text="加载中..."
+            :style="topLoadingStyle ? 'height:200px;width:100%;' : ''"
+          >
             <div
               class="song_list"
               v-for="songlistItem in topSongList"
@@ -191,7 +195,12 @@
         <!-- E-歌单标签页最外层容器 -->
       </el-tab-pane>
       <el-tab-pane label="排行榜" name="rank">
-        <div class="ranking-box" v-loading="rankLoading">
+        <div
+          class="ranking-box"
+          v-loading="rankLoading"
+          element-loading-text="加载中..."
+          :style="rankLoadingStyle ? 'height:200px;width:100%;' : ''"
+        >
           <p>官方榜</p>
           <div
             class="official-box"
@@ -212,6 +221,7 @@
                   v-for="(secItem, secIndex) in item.tracks"
                   :key="secIndex"
                   :class="secIndex % 2 == 0 ? 'dan' : 'shuang'"
+                  @dblclick="playIdSong(secItem.id)"
                 >
                   <p>
                     <em>{{ secIndex + 1 }}</em> {{ secItem.first }}
@@ -283,7 +293,12 @@
               >
             </el-radio-group>
           </div>
-          <div class="singer-list-box" v-loading="singerLoading">
+          <div
+            class="singer-list-box"
+            v-loading="singerLoading"
+            element-loading-text="加载中..."
+            :style="loadingStyle ? 'height:200px;width:100%;' : ''"
+          >
             <div
               class="singer"
               v-for="singer in singerData"
@@ -317,7 +332,12 @@
             </el-breadcrumb>
           </div>
           <div v-if="activeTab == 1" class="news-music-one">
-            <div class="nm-main" v-loading="newsLoading">
+            <div
+              class="nm-main"
+              v-loading="newsLoading"
+              element-loading-text="加载中..."
+              :style="newsLoadingStyle ? 'height:200px;width:100%;' : ''"
+            >
               <div class="nm-list-box">
                 <div
                   class="nm-box"
@@ -349,7 +369,12 @@
           </div>
           <div v-else-if="activeTab == 2" class="news-music-two">
             <p>本周新碟</p>
-            <div class="nmt-list-box" v-loading="nmtLoading">
+            <div
+              class="nmt-list-box"
+              v-loading="nmtLoading"
+              element-loading-text="加载中..."
+              :style="nmtLoadingStyle ? 'height:200px;width:100%;' : ''"
+            >
               <div
                 class="nmt-box"
                 v-for="nmtItem in nmtData"
@@ -390,7 +415,8 @@ export default {
       // 歌单请求条数
       limit: 100,
       // 歌单列表加载中
-      topLoading: false,
+      topLoading: true,
+      topLoadingStyle: true,
       // 歌单总数目
       totalTopSongList: 0,
       // 当前页数
@@ -402,12 +428,14 @@ export default {
       officicalList: [],
       globalList: [],
       rankLoading: true,
+      rankLoadingStyle: true,
       // 是否不是第一次加载
       rankStatus: false,
 
       // 歌手标签页的标签
       singerStatus: false,
       singerLoading: true,
+      loadingStyle: true,
       langRadio: -1,
       typeRadio: -1,
       filtrateRadio: -1,
@@ -451,6 +479,7 @@ export default {
 
       // 最新音乐标签页
       newsLoading: true,
+      newsLoadingStyle: true,
       newsStatus: false,
       // 1是新歌速递，2是新碟上架
       activeTab: 1,
@@ -459,6 +488,7 @@ export default {
       // 新碟上架数据
       nmtData: [],
       nmtLoading: true,
+      nmtLoadingStyle: true,
       nmtStatus: false,
     };
   },
@@ -614,7 +644,6 @@ export default {
     // 获取歌单标签页的歌单
     getTopSongList(currentPage) {
       let that = this;
-      that.topLoading = true;
       // 默认取出50条，设置limit可以设置取出条数 设置offset可以设置页数 order: 可选值为 'new' 和 'hot', 分别对应最新和最热 , 默认为 'hot'
       let order = "hot";
       let limit = that.limit;
@@ -635,6 +664,9 @@ export default {
           that.topSongList = res.playlists;
           that.totalTopSongList = res.total;
           that.topLoading = false;
+          if (this.topSongList.length > 0) {
+            this.topLoadingStyle = false;
+          }
           console.log("歌单(精选)：", res);
         })
         .catch((error) => {
@@ -689,7 +721,9 @@ export default {
         let allList = res.list;
         that.officicalList = allList.splice(0, 4);
         that.globalList = allList;
-        console.log("官方榜：", that.officicalList);
+        if (this.officicalList.length > 0) {
+          this.rankLoadingStyle = false;
+        }
       });
     },
 
@@ -736,6 +770,9 @@ export default {
               : (this.singerData = res.artists);
           }
           this.singerLoading = false;
+          if (this.singerData.length > 0) {
+            this.loadingStyle = false;
+          }
           // this.$forceUpdate();
         })
         .catch((err) => {
@@ -747,7 +784,7 @@ export default {
     getScrollData() {
       let list = document.getElementsByClassName("discover_music_wrapper")[0];
       if (list.scrollHeight - list.scrollTop <= list.clientHeight) {
-        if (this.more) {
+        if (this.more && !this.singerLoading) {
           this.singerLoading = true;
         }
         this.getSingerList();
@@ -755,7 +792,9 @@ export default {
     },
 
     toSingerDetail(id) {
-      this.$router.push("/singer_detail?id=" + id);
+      this.$router.push(
+        "/singer_detail?id=" + id + "&activeName=" + this.activeName
+      );
     },
 
     // 分类
@@ -812,6 +851,9 @@ export default {
             return song;
           });
           this.newsMusicData = songList;
+          if (this.newsMusicData.length > 0) {
+            this.newsLoadingStyle = false;
+          }
           this.newsLoading = false;
         })
         .catch((err) => {
@@ -824,6 +866,17 @@ export default {
       song.indexId = songIndex;
       song.list = this.newsMusicData;
       this.$emit("playingSong", song);
+    },
+
+    // 双击后播放歌曲
+    playIdSong(id) {
+      console.log(id);
+      this.$message({
+        type: "warning",
+        message: "功能正在完善中...",
+        duration: 1500,
+      });
+      // this.$emit("playIdSong", id);
     },
 
     // 自定义歌单列表的索引
@@ -853,6 +906,9 @@ export default {
           let weekData = res.weekData;
           let monthData = res.monthData;
           this.nmtData = weekData.concat(monthData);
+          if (this.nmtData.length > 0) {
+            this.nmtLoadingStyle = false;
+          }
         })
         .catch((err) => {
           console.log(err);

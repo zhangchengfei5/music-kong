@@ -77,6 +77,7 @@
             class="mfsl_song_table"
             v-loading.lock="loading"
             element-loading-text="加载中..."
+            :style="loadingStyle ? 'height:200px;width:100%;' : ''"
           >
             <thead class="mfsl_song_head">
               <tr>
@@ -177,6 +178,7 @@ export default {
       download: false,
       // 是否在加载
       loading: true,
+      loadingStyle: true,
     };
   },
   created() {
@@ -336,6 +338,9 @@ export default {
           that.songList = songList;
           console.log("歌单歌曲列表my：", that.songList);
           that.loading = false;
+          if (that.songList.length > 0) {
+            that.loadingStyle = false;
+          }
         })
         .catch((err) => {
           console.log(err);

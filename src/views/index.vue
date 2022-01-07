@@ -67,7 +67,7 @@
     <div class="home_main_wrapper">
       <div class="menu_wrapper">
         <el-menu
-          default-active="0"
+          :default-active="activeMenu"
           :default-openeds="opends"
           text-color="#666"
           active-text-color="#000"
@@ -100,7 +100,10 @@
           </el-sub-menu>
         </el-menu>
       </div>
-      <router-view @playingSong="playSong"></router-view>
+      <router-view
+        @playingSong="playSong"
+        @playIdSong="playIdSong"
+      ></router-view>
     </div>
     <!-- E-主体部分 -->
 
@@ -226,6 +229,7 @@ export default {
       // 歌曲播放进度条百分比
       precentAge: 0,
       songList: [],
+      activeMenu: 0,
       // 默认展开菜单
       opends: ["11"],
       songNowList: [],
@@ -354,6 +358,7 @@ export default {
     },
     //  点击左边导航菜单跳转页面
     onClickMenu(index) {
+      this.activeMenu = index;
       switch (Number(index)) {
         case 0:
           this.$router.push("/discover_music");
@@ -464,19 +469,24 @@ export default {
         });
     },
 
+    // 通过ID放歌曲
+    playIdSong(songId) {
+      this.getSongUrl(songId);
+    },
+
     // 点击歌曲播放音乐
     playSong(song) {
       let that = this;
       console.log("传送过来的数据：", song);
       that.songNowList = song.list;
-      if (song.fee == 0) {
-        this.$message({
-          message: "当前歌曲暂无音源",
-          type: "error",
-          duration: 3000,
-        });
-        return;
-      }
+      // if (song.fee == 0) {
+      //   this.$message({
+      //     message: "当前歌曲暂无音源",
+      //     type: "error",
+      //     duration: 3000,
+      //   });
+      //   return;
+      // }
       console.log("songNowList:", that.songNowList);
       that.songIndexId = song.indexId;
       that.songName = song.name;
@@ -517,6 +527,7 @@ export default {
 
     // 格式化歌手名字
     formatterSinger(singer) {
+      console.log(singer);
       this.singer = "";
       singer.forEach((item, index, arr) => {
         if (arr.length > 1) {

@@ -28,7 +28,7 @@
           <div class="btn">
             <el-icon v-if="subscribed"><folder-checked /></el-icon>
             <el-icon v-else><folder-add /></el-icon>
-            <span>收藏({{ slItem.subscribedCount }})</span>
+            <span>收藏({{ playCount(slItem.subscribedCount) }})</span>
           </div>
           <div class="btn">
             <el-icon><share /></el-icon><span>分享</span>
@@ -81,6 +81,7 @@
             class="mfsl_song_table"
             v-loading.lock="loading"
             element-loading-text="加载中..."
+            :style="loadingStyle ? 'height:200px;width:100%;' : ''"
           >
             <thead class="mfsl_song_head">
               <tr>
@@ -178,6 +179,7 @@ export default {
       download: false,
       // 是否在加载
       loading: true,
+      loadingStyle: true,
     };
   },
   created() {
@@ -186,6 +188,8 @@ export default {
   },
   mounted() {
     this.isLineFeed();
+    // 获取歌单信息数据
+    this.getPlayInfoData();
     // 获取歌单所有歌曲
     this.getPlayListSong();
   },
@@ -216,6 +220,7 @@ export default {
     // 由于不同的歌单不同的数据，所以当路由变换时执行以下方法
     $route: function () {
       this.loading = true;
+      this.loadingStyle = true;
       this.showDescribe = false;
       this.switchWrap = false;
       if (this.$route.query.slItem == null) {
@@ -223,6 +228,7 @@ export default {
       } else {
         this.getSlItem();
         this.isLineFeed();
+        this.getPlayInfoData();
         this.getPlayListSong();
       }
     },
@@ -303,6 +309,26 @@ export default {
       this.$emit("playingSong", song);
     },
 
+    // 获取歌单信息
+    getPlayInfoData() {
+      if (this.creator) return;
+      let params = {};
+      params.id = this.slItem.id;
+      server
+        .post("/playlist/detail", params)
+        .then((res) => {
+          console.log("歌单信息数据：", res);
+          if (res.code != 200) {
+            this.$message.error("获取歌单信息数据失败!");
+          }
+          let info = res.playlist;
+          this.creator = info.creator;
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+
     // 获取歌单所有歌曲
     getPlayListSong() {
       let that = this;
@@ -337,6 +363,7 @@ export default {
           that.songList = songList;
           console.log("歌单歌曲列表my：", that.songList);
           that.loading = false;
+          that.loadingStyle = false;
         })
         .catch((err) => {
           console.log(err);
