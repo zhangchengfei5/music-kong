@@ -229,7 +229,7 @@ export default {
       // 歌曲播放进度条百分比
       precentAge: 0,
       songList: [],
-      activeMenu: 0,
+      activeMenu: "0",
       // 默认展开菜单
       opends: ["11"],
       songNowList: [],
@@ -462,6 +462,9 @@ export default {
           // 播放位置发生改变时触发
           songAudio.ontimeupdate = () => {
             that.playStatus = true;
+            if (songAudio.currentTime == songAudio.duration) {
+              this.switchMusic(0);
+            }
           };
         })
         .catch((err) => {
@@ -469,12 +472,16 @@ export default {
         });
     },
 
-    // 通过ID放歌曲
-    playIdSong(songId) {
-      this.getSongUrl(songId);
+    // 排行榜通过ID放歌曲
+    playIdSong(song) {
+      this.songName = song.name;
+      this.formatterSinger(song.singer);
+      this.imgUrl.songImg = song.picUrl;
+      this.songDuration = util.formatterSongTime(song.time);
+      this.getSongUrl(song.id);
     },
 
-    // 点击歌曲播放音乐
+    // 点击歌单歌曲播放音乐
     playSong(song) {
       let that = this;
       console.log("传送过来的数据：", song);
@@ -509,19 +516,21 @@ export default {
         this.songIndexId -= 1;
       }
       let nowSong = this.songNowList[this.songIndexId];
-      if (nowSong.fee == 0) {
-        if (status == 0) {
-          this.songIndexId += 1;
-        } else {
-          this.songIndexId -= 1;
-        }
-        nowSong = this.songNowList[this.songIndexId];
-        this.getSongUrl(nowSong.id);
-      } else {
-        this.getSongUrl(nowSong.id);
-      }
+      console.log("什么东西？没ID", nowSong);
+      // if (nowSong.fee == 0) {
+      // if (status == 0) {
+      //   this.songIndexId += 1;
+      // } else {
+      //   this.songIndexId -= 1;
+      // }
+      // nowSong = this.songNowList[this.songIndexId];
+      this.getSongUrl(nowSong.id);
+      // } else {
+      //   this.getSongUrl(nowSong.id);
+      // }
       this.songName = nowSong.name;
       this.formatterSinger(nowSong.singer);
+      this.songDuration = util.formatterSongTime(nowSong.time);
       this.imgUrl.songImg = nowSong.picUrl;
     },
 

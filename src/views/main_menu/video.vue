@@ -6,5 +6,8 @@
 export default {};
 </script>
 
-<style>
+<style scoped>
+.video_wrapper {
+  display: flex;
+}
 </style>

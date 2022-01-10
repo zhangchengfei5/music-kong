@@ -125,31 +125,47 @@
         <div class="gedan-box">
           <!-- S-头部标签弹出等 -->
           <div class="song_tag_head">
-            <el-popover :width="500" placement="bottom-start">
+            <el-popover
+              :visible="turnPop"
+              :width="500"
+              placement="bottom-start"
+            >
+              <span
+                :class="tagName == '全部歌单' ? 'gedan_checkTag' : ''"
+                @click="switchCategory(catList.all ? catList.all.name : '')"
+                >{{ catList.all ? catList.all.name : "" }}</span
+              >
               <div class="song_tag_list_box">
-                <div class="list_one">
-                  <span>语种</span>
-                  <span>风格</span>
-                </div>
-                <div class="list_sec">
-                  <span>华语</span>
-                  <span>欧美</span>
-                  <span>日语</span>
+                <div
+                  class="category_list"
+                  v-for="(iCate, iIndex) in catList.categories"
+                  :key="iCate.id"
+                >
+                  <div class="list_one">
+                    <span>{{ iCate }}</span>
+                  </div>
+                  <div class="list_sec">
+                    <span
+                      v-for="secTag in categoryType[iIndex]"
+                      :key="secTag.id"
+                      :class="tagName == secTag.name ? 'gedan_checkTag' : ''"
+                      @click="switchCategory(secTag.name)"
+                      >{{ secTag.name }}</span
+                    >
+                  </div>
                 </div>
               </div>
               <template #reference>
-                <div class="allSongList">
-                  全部歌单 <el-icon><arrow-right /></el-icon>
+                <div class="allSongList" @click="turnPop = !turnPop">
+                  {{ tagName }} <el-icon><arrow-right /></el-icon>
                 </div>
               </template>
             </el-popover>
-            <el-breadcrumb separator=" ">
-              <el-breadcrumb-item>华语</el-breadcrumb-item>
-              <el-breadcrumb-item>流行</el-breadcrumb-item>
-              <el-breadcrumb-item>摇滚</el-breadcrumb-item>
-              <el-breadcrumb-item>民谣</el-breadcrumb-item>
-              <el-breadcrumb-item>电子</el-breadcrumb-item>
-            </el-breadcrumb>
+            <div class="hotCat_list">
+              <p v-for="hotCat in hotCategory" :key="hotCat.id">
+                {{ hotCat.name }}
+              </p>
+            </div>
           </div>
           <!-- E-头部标签弹出等 -->
 
@@ -221,7 +237,7 @@
                   v-for="(secItem, secIndex) in item.tracks"
                   :key="secIndex"
                   :class="secIndex % 2 == 0 ? 'dan' : 'shuang'"
-                  @dblclick="playIdSong(secItem.id)"
+                  @dblclick="getOfficialSong(item.id, secIndex)"
                 >
                   <p>
                     <em>{{ secIndex + 1 }}</em> {{ secItem.first }}
@@ -323,13 +339,15 @@
             </p>
           </div>
           <div class="nm-header">
-            <el-breadcrumb separator=" ">
-              <el-breadcrumb-item>全部</el-breadcrumb-item>
-              <el-breadcrumb-item>华语</el-breadcrumb-item>
-              <el-breadcrumb-item>欧美</el-breadcrumb-item>
-              <el-breadcrumb-item>韩国</el-breadcrumb-item>
-              <el-breadcrumb-item>日本</el-breadcrumb-item>
-            </el-breadcrumb>
+            <div class="tagType">
+              <span
+                :class="activeNewsTag == item.name ? 'activeNewsTag' : ''"
+                v-for="item in newsTag"
+                :key="item.type"
+                @click="clickNewsTag(item)"
+                >{{ item.name }}</span
+              >
+            </div>
           </div>
           <div v-if="activeTab == 1" class="news-music-one">
             <div
@@ -412,6 +430,13 @@ export default {
 
       // 歌单标签页歌单列表
       topSongList: [],
+      // 热门分类
+      hotCategory: [],
+      // 弹出框分类里的所有东西
+      catList: {},
+      categoryType: [],
+      turnPop: false,
+      tagName: "全部歌单",
       // 歌单请求条数
       limit: 100,
       // 歌单列表加载中
@@ -483,6 +508,16 @@ export default {
       newsStatus: false,
       // 1是新歌速递，2是新碟上架
       activeTab: 1,
+      activeNewsTag: "全部",
+      newsTag1: "全部",
+      newsTag2: "全部",
+      newsTag: [
+        { name: "全部", type: 0, area: "ALL" },
+        { name: "华语", type: 7, area: "ZH" },
+        { name: "欧美", type: 96, area: "EA" },
+        { name: "日本", type: 8, area: "JP" },
+        { name: "韩国", type: 16, area: "KR" },
+      ],
       // 新歌速递列表数据
       newsMusicData: [],
       // 新碟上架数据
@@ -499,6 +534,8 @@ export default {
       switch (newVal) {
         case "songList":
           if (!this.topListStatus) {
+            this.getHotCat();
+            this.getCatlist();
             this.getTopSongList(this.currentPage);
             this.topListStatus = true;
           }
@@ -642,8 +679,9 @@ export default {
     },
 
     // 获取歌单标签页的歌单
-    getTopSongList(currentPage) {
+    getTopSongList(currentPage = this.currentPage, cat = "全部") {
       let that = this;
+      that.topLoading = true;
       // 默认取出50条，设置limit可以设置取出条数 设置offset可以设置页数 order: 可选值为 'new' 和 'hot', 分别对应最新和最热 , 默认为 'hot'
       let order = "hot";
       let limit = that.limit;
@@ -654,6 +692,7 @@ export default {
       params.offset = offset;
       params.limit = limit;
       params.order = order;
+      params.cat = cat;
       server
         .post(url, params)
         .then((res) => {
@@ -673,12 +712,60 @@ export default {
           console.log(error);
         });
     },
+    // 获取热门歌单分类
+    getHotCat() {
+      let paramas = {};
+      server
+        .get("/playlist/hot", paramas)
+        .then((res) => {
+          console.log("获取热门歌单分类数据", res);
+          if (res.code != 200) {
+            this.$message.error("获取热门歌单分类数据失败！");
+          }
+          this.hotCategory = res.tags;
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+    // 获取所有歌单分类
+    getCatlist() {
+      let paramas = {};
+      server
+        .get("/playlist/catlist", paramas)
+        .then((res) => {
+          console.log("获取所有歌单分类数据", res);
+          if (res.code != 200) {
+            this.$message.error("获取所有歌单分类失败！");
+          }
+          this.catList = res;
+          for (let i = 0; i < Object.keys(res.categories).length; i++) {
+            this.categoryType[i] = [];
+          }
+          res.sub.forEach((item) => {
+            this.categoryType[item.category].push(item);
+          });
+          console.log(this.categoryType);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+    // 点击切换歌单分类
+    switchCategory(tag) {
+      this.turnPop = false;
+      this.tagName = tag;
+      let cat;
+      this.tagName == "全部歌单" ? (cat = "全部") : (cat = this.tagName);
+      this.getTopSongList(1, cat);
+    },
     // 歌单标签页的歌单跳转到歌单详情
     goDetailSongList(slItem) {
       let d = JSON.stringify(slItem);
       let songItem = encodeURIComponent(d);
       this.$router.push("/my_favourtie_song?slItem=" + songItem);
     },
+
     // 最新音乐标签页的新碟上架歌单跳转到歌单详情
     goDetailAlbum(slItem) {
       let d = JSON.stringify(slItem);
@@ -720,6 +807,7 @@ export default {
         that.rankLoading = false;
         let allList = res.list;
         that.officicalList = allList.splice(0, 4);
+        console.log("官方榜：", that.officicalList);
         that.globalList = allList;
         if (this.officicalList.length > 0) {
           this.rankLoadingStyle = false;
@@ -727,10 +815,54 @@ export default {
       });
     },
 
+    // 获取官方榜的前几首歌并播放当前双击的歌曲
+    getOfficialSong(id, index) {
+      let params = {};
+      params.id = id;
+      server
+        .post("/playlist/detail", params)
+        .then((res) => {
+          console.log("官方榜的歌单详情:", res);
+          if (res.code != 200) {
+            this.$message.error("获取官方榜的歌单详情失败！");
+          }
+          let sId = res.privileges[index].id;
+          this.getSongDetail(sId);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+
+    // 排行榜的歌双击后获取歌曲详情并播放
+    getSongDetail(id) {
+      let params = {};
+      server
+        .post("/song/detail?ids=" + id, params)
+        .then((res) => {
+          console.log("歌曲详情信息：", res);
+          if (res.code != 200) {
+            this.$message.error("获取歌曲详情信息失败！");
+          }
+          let songs = res.songs;
+          let song = {};
+          song.id = id;
+          song.name = songs[0].name;
+          song.singer = songs[0].ar.map((i) => {
+            return i.name;
+          });
+          song.picUrl = songs[0].al.picUrl;
+          song.time = songs[0].dt;
+          this.$emit("playIdSong", song);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+
     // 获取歌手标签页的歌手分类列表
     getSingerList() {
       if (!this.more) return;
-      console.log("进来了吗");
       let params = {};
       /* limit : 返回数量 , 默认为 30 
         offset : 偏移数量，用于分页 , 如 : 如 :( 页数 -1)*30, 其中 30 为 limit 的值 , 默认为 0 
@@ -773,7 +905,6 @@ export default {
           if (this.singerData.length > 0) {
             this.loadingStyle = false;
           }
-          // this.$forceUpdate();
         })
         .catch((err) => {
           console.log(err);
@@ -791,6 +922,7 @@ export default {
       }
     },
 
+    // 跳转到歌手详情页
     toSingerDetail(id) {
       this.$router.push(
         "/singer_detail?id=" + id + "&activeName=" + this.activeName
@@ -813,23 +945,26 @@ export default {
     clickTab() {
       if (this.activeTab == 1) {
         this.activeTab = 2;
+        this.activeNewsTag = this.newsTag2;
         if (!this.nmtStatus) {
           this.getNmtData();
           this.nmtStatus = true;
         }
       } else {
+        this.activeNewsTag = this.newsTag1;
         this.activeTab = 1;
       }
     },
 
     // 获取新歌速递的数据
-    getNewsOneData() {
+    getNewsOneData(type = 0) {
       // let that = this
       let params = {};
       // type: 地区类型 id,全部:0,华语:7,欧美:96,日本:8,韩国:16
-      params.type = 0;
+      params.type = type;
+      let timestamp = Date.now();
       server
-        .post("/top/song", params)
+        .post("/top/song?t=" + timestamp, params)
         .then((res) => {
           console.log("新歌速递：", res);
           if (res.code != 200) {
@@ -861,22 +996,30 @@ export default {
         });
     },
 
+    // 切换新歌速递/新碟上架里的标签
+    clickNewsTag(item) {
+      this.activeNewsTag = item.name;
+      if (this.activeTab == 1) {
+        this.newsTag1 = this.activeNewsTag;
+        this.newsLoading = true;
+        this.newsLoadingStyle = true;
+        this.newsMusicData = [];
+        this.getNewsOneData(item.type);
+      }
+      if (this.activeTab == 2) {
+        this.newsTag2 = this.activeNewsTag;
+        this.nmtLoading = true;
+        this.nmtLoadingStyle = true;
+        this.nmtData = [];
+        this.getNmtData(item.area);
+      }
+    },
+
     // 双击后播放歌曲
     playSong(song, songIndex) {
       song.indexId = songIndex;
       song.list = this.newsMusicData;
       this.$emit("playingSong", song);
-    },
-
-    // 双击后播放歌曲
-    playIdSong(id) {
-      console.log(id);
-      this.$message({
-        type: "warning",
-        message: "功能正在完善中...",
-        duration: 1500,
-      });
-      // this.$emit("playIdSong", id);
     },
 
     // 自定义歌单列表的索引
@@ -891,11 +1034,13 @@ export default {
     },
 
     // 获取新碟上架数据
-    getNmtData() {
+    getNmtData(area = "ALL") {
       let params = {};
       // 可选参数 area: ALL:全部,ZH:华语,EA:欧美,KR:韩国,JP:日本  type : new:全部 hot:热门,默认为 new
+      params.area = area;
+      let timestamp = Date.now();
       server
-        .post("/top/album", params)
+        .post("/top/album?t=" + timestamp, params)
         .then((res) => {
           console.log("新碟上架", res);
           if (res.code != 200) {
@@ -905,7 +1050,7 @@ export default {
           this.nmtLoading = false;
           let weekData = res.weekData;
           let monthData = res.monthData;
-          this.nmtData = weekData.concat(monthData);
+          this.nmtData = weekData ? weekData.concat(monthData) : monthData;
           if (this.nmtData.length > 0) {
             this.nmtLoadingStyle = false;
           }
@@ -1095,6 +1240,7 @@ export default {
   left: 0;
   right: 0;
   border-top-right-radius: 0.06rem;
+  border-top-left-radius: 0.06rem;
 }
 /* 推荐歌单播放量、推荐MV播放量 */
 .song_list .song_play_count,
@@ -1226,32 +1372,65 @@ export default {
   margin-bottom: 0.1rem;
   width: 100%;
 }
+/* 头部右边的热门标签列表 */
+.hotCat_list {
+  display: flex;
+  align-items: center;
+}
+.hotCat_list p {
+  margin-left: 0.2rem;
+  cursor: pointer;
+  color: #999;
+  font-size: 0.12rem;
+}
+.hotCat_list p:hover {
+  color: #666;
+}
 body >>> .el-popper.is-light {
   left: 2.1rem !important;
 }
 .gedan-box >>> .el-popper__arrow {
   display: none;
 }
+.el-popover > span {
+  cursor: pointer;
+  padding: 0.05rem 0.1rem;
+}
+.gedan_checkTag {
+  color: #cc66ff;
+  background-color: #fff0ff;
+  border-radius: 0.3rem;
+}
 /* 标签弹出容器 */
 .song_tag_list_box {
   display: flex;
+  flex-direction: column;
+  border-top: 1px solid #999;
+  margin-top: 0.1rem;
+}
+.category_list {
+  display: flex;
+  margin-top: 0.1rem;
 }
 /* 第一列容器 */
-.song_tag_list_box .list_one {
+.category_list .list_one {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding-right: 0.1rem;
-  border-right: 0.01rem solid #999;
   width: 1rem;
 }
 /* 子标签第二列容器 */
-.song_tag_list_box .list_sec {
+.category_list .list_sec {
   display: flex;
+  flex-wrap: wrap;
+  flex: 1;
   margin-left: 0.1rem;
+  overflow: hidden;
 }
 .list_sec > span {
   margin-right: 0.1rem;
+  padding: 0.05rem 0.1rem;
   cursor: pointer;
 }
 .list_sec > span:hover {
@@ -1260,13 +1439,6 @@ body >>> .el-popper.is-light {
 /* 全部歌单（触发弹出的按钮） */
 .allSongList {
   cursor: pointer;
-}
-.el-breadcrumb__item {
-  cursor: pointer;
-  color: #999;
-}
-.discover_music_wrapper >>> .el-breadcrumb__item:hover {
-  color: #666;
 }
 /* 单数行 */
 .dan {
@@ -1502,6 +1674,19 @@ body >>> .el-popper.is-light {
   align-items: center;
   width: 100%;
   margin-bottom: 0.1rem;
+}
+.tagType span {
+  font-size: 0.13rem;
+  color: #999;
+  margin-right: 0.1rem;
+}
+.activeNewsTag {
+  color: #000 !important;
+  font-weight: bold;
+}
+.tagType span:hover {
+  color: #303133;
+  cursor: pointer;
 }
 /* 页面主要内容 */
 .nm-main {
