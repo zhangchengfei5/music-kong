@@ -100,10 +100,8 @@
           </el-sub-menu>
         </el-menu>
       </div>
-      <router-view
-        @playingSong="playSong"
-        @playIdSong="playIdSong"
-      ></router-view>
+      <router-view @playingSong="playSong" @playIdSong="playIdSong">
+      </router-view>
     </div>
     <!-- E-主体部分 -->
 
@@ -443,6 +441,7 @@ export default {
             that.precentAge = 0;
             that.songDuration = "00:00";
             that.currentDuration = "00:00";
+            that.switchMusic(0);
             return;
           }
           // src资源更改后重新加载

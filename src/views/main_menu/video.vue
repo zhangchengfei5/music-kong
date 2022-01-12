@@ -1,5 +1,9 @@
 <template>
-  <div class="video_wrapper">
+  <div
+    class="video_wrapper"
+    @scroll="scrollData"
+    :style="videoLoading ? 'overflow:hidden' : ''"
+  >
     <el-tabs v-model="activeName">
       <el-tab-pane label="视频" name="video">
         <!-- S-视频容器 -->
@@ -16,10 +20,7 @@
                 <div class="tags_list_box">
                   <span
                     :class="tagName == '全部视频' ? 'active_tag' : ''"
-                    @click="
-                      tagName = '全部视频';
-                      turnPop = false;
-                    "
+                    @click="clickAllVideo"
                     >全部视频</span
                   >
                   <div class="list_tag">
@@ -57,13 +58,31 @@
           <!-- E-视频标签页头部 -->
 
           <!-- S-视频标签页主体 -->
-          <div class="video_main">
+          <div
+            class="video_main"
+            v-loading.lock="videoLoading"
+            element-loading-text="加载中..."
+            :style="videoLoadingStyle ? 'height:200px;width:100%;' : ''"
+          >
             <!-- 视频个体容器 -->
-            <div class="video_list_box">
-              <img src="../../assets/images/bottomNav/songImg1.jpg" alt="" />
-              <p>视频名字</p>
-              <span><i>By</i>&nbsp;这是谁发的？</span>
-              <div class="play_count"></div>
+            <div class="video_list_box" v-for="item in timelineAll" :key="item">
+              <div class="video_img" @click="toVideoDetail(item.vid)">
+                <img :src="item.coverUrl" alt="" />
+                <div class="play_count">
+                  <el-icon :size="16"><video-play /></el-icon
+                  >{{ playCount(item.playTime) }}
+                </div>
+                <em>{{ formatterSongTime(item.durationms) }}</em>
+                <div class="bg_top"></div>
+                <div class="bg_bottom"></div>
+              </div>
+              <p @click="toVideoDetail(item.vid)">{{ item.title }}</p>
+              <div class="author">
+                <i>by</i>
+                <span
+                  >&nbsp;{{ item.creator ? item.creator.nickname : "" }}</span
+                >
+              </div>
             </div>
           </div>
           <!-- E-视频标签页主体 -->
@@ -77,24 +96,56 @@
 
 <script>
 import server from "../../utils/http.js";
-// import util from "@/utils/util.js";
+import util from "@/utils/util.js";
 
 export default {
+  name: "videoPage",
   data() {
     return {
       activeName: "video",
       tagName: "全部视频",
       turnPop: false,
 
+      // 分类列表数据
       categoryList: [],
+      // 标签列表数据
       groupList: [],
+      // 标签Id
+      groupId: "",
+      // 视频列表数据
       timelineAll: [],
+      videoLoading: true,
+      videoLoadingStyle: true,
+      // 成功取出视频的次数
+      vCount: 0,
+      hasmore: true,
     };
   },
-  mounted() {
+  computed: {
+    playCount: function () {
+      return function (val) {
+        let count = util.playCount(val);
+        return count;
+      };
+    },
+    // 格式化歌曲时间
+    formatterSongTime: function () {
+      return function (time) {
+        let songTime = util.formatterSongTime(time);
+        return songTime;
+      };
+    },
+  },
+  created() {
+    // 获取视频分类列表
     this.getCategoryList();
+    // 获取视频标签列表
     this.getGroupList();
+    // 获取全部视频
     this.getTimelineAll();
+  },
+  mounted() {
+    this.scrollData();
   },
   methods: {
     // 获取视频分类列表
@@ -129,27 +180,145 @@ export default {
           console.log(err);
         });
     },
+    // 点击标签全部视频
+    clickAllVideo() {
+      this.turnPop = false;
+      if (this.tagName == "全部视频") return;
+      this.tagName = "全部视频";
+      this.vCount = 0;
+      this.videoLoading = true;
+      this.videoLoadingStyle = true;
+      this.timelineAll = [];
+      this.hasmore = true;
+      this.getTimelineAll();
+      let timer = setTimeout(() => {
+        this.scrollData();
+        clearTimeout(timer);
+        timer = null;
+      }, 500);
+    },
     // 点击标签切换
     switchTag(item) {
       this.turnPop = false;
+      if (item.name == this.tagName) return;
       this.tagName = item.name;
+      this.vCount = 0;
+      this.videoLoading = true;
+      this.videoLoadingStyle = true;
+      this.timelineAll = [];
+      this.hasmore = true;
+      this.groupId = item.id;
+      this.getVideoGroup(this.groupId);
+      let timer = setTimeout(() => {
+        this.scrollData();
+        clearTimeout(timer);
+        timer = null;
+      }, 500);
     },
     // 获取全部视频列表
-    getTimelineAll(offset = 0) {
+    getTimelineAll() {
+      if (!this.hasmore && this.vCount != 0) return;
       let params = {};
-      params.offset = offset;
+      params.offset = 8 * this.vCount;
+      let timestamp = Date.now();
       server
-        .get("/video/timeline/all", params)
+        .get("/video/timeline/all?t=" + timestamp, params)
         .then((res) => {
           console.log("获取全部视频列表", res);
           if (res.code != 200) {
             this.$message.error("获取全部视频列表失败！");
           }
-          this.timelineAll = res.data;
+          // 判断是否还有更多
+          if (res.hasmore) {
+            // 判断成功取到视频数据的次数
+            if (this.vCount > 0) {
+              let allVideo = [];
+              res.datas.forEach((i) => {
+                if (i.type == 1) {
+                  allVideo.push(i.data);
+                }
+              });
+              this.timelineAll = this.timelineAll.concat(allVideo);
+            } else {
+              res.datas.forEach((i) => {
+                if (i.type == 1) {
+                  this.timelineAll.push(i.data);
+                }
+              });
+            }
+            if (this.timelineAll.length > 0) {
+              this.videoLoadingStyle = false;
+            }
+            this.vCount++;
+          }
+          this.hasmore = res.hasmore;
+          this.videoLoading = false;
         })
         .catch((err) => {
           console.log(err);
         });
+    },
+    //获取视频标签/分类下的视频
+    getVideoGroup(id) {
+      if (!this.hasmore && this.vCount != 0) return;
+      let params = {};
+      params.offset = 8 * this.vCount;
+      let timestamp = Date.now();
+      server
+        .get("/video/group?id=" + id + "&t=" + timestamp, params)
+        .then((res) => {
+          console.log("获取视频标签/分类下的视频", res);
+          if (res.code != 200) {
+            this.$message.error("获取视频标签/分类下的视频失败！");
+          }
+          // 判断是否还有更多
+          if (res.hasmore) {
+            // 判断成功取到视频数据的次数
+            if (this.vCount > 0) {
+              let allVideo = [];
+              res.datas.forEach((i) => {
+                if (i.type == 1) {
+                  allVideo.push(i.data);
+                }
+              });
+              this.timelineAll = this.timelineAll.concat(allVideo);
+            } else {
+              res.datas.forEach((i) => {
+                if (i.type == 1) {
+                  this.timelineAll.push(i.data);
+                }
+              });
+            }
+            if (this.timelineAll.length > 0) {
+              this.videoLoadingStyle = false;
+            }
+            this.vCount++;
+          }
+          this.hasmore = res.hasmore;
+          this.videoLoading = false;
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+    // 视频滚动到底部自动加载
+    scrollData() {
+      let list = document.getElementsByClassName("video_wrapper")[0];
+      if (list.scrollHeight - list.scrollTop <= list.clientHeight) {
+        if (this.hasmore && !this.videoLoading) {
+          this.videoLoading = true;
+        }
+        if (this.tagName == "全部视频") {
+          this.getTimelineAll();
+        } else {
+          this.getVideoGroup(this.groupId);
+        }
+      }
+    },
+
+    // 跳转到视频详情页
+    toVideoDetail(id) {
+      this.$router.push("/video_detail?vid=" + id);
     },
   },
 };
@@ -265,6 +434,123 @@ $theme: #cc66ff;
             &:hover {
               color: #000;
             }
+          }
+        }
+      }
+    }
+
+    .video_main {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.2rem;
+      overflow: hidden;
+      margin-top: 0.2rem;
+
+      .video_list_box {
+        display: flex;
+        flex-direction: column;
+        width: 2.385rem;
+        border-radius: 0.06rem;
+
+        .video_img {
+          display: flex;
+          position: relative;
+
+          &:hover {
+            cursor: pointer;
+          }
+
+          > img {
+            width: 100%;
+            height: 1.4rem;
+            object-fit: cover;
+            border-radius: 0.06rem;
+          }
+
+          .play_count {
+            color: #fff;
+            font-size: 0.12rem;
+            position: absolute;
+            z-index: 50;
+            top: 0.02rem;
+            right: 0.05rem;
+            display: flex;
+            align-items: center;
+
+            .el-icon {
+              margin-right: 0.03rem;
+            }
+          }
+
+          em {
+            font-style: normal;
+            color: #fff;
+            font-size: 0.12rem;
+            position: absolute;
+            z-index: 50;
+            bottom: 0.05rem;
+            right: 0.05rem;
+          }
+
+          .bg_top {
+            height: 0.18rem;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.1);
+            position: absolute;
+            z-index: 49;
+            top: 0;
+            border-top-left-radius: 0.06rem;
+            border-top-right-radius: 0.06rem;
+          }
+          .bg_bottom {
+            width: 100%;
+            height: 0.2rem;
+            background-color: rgba(0, 0, 0, 0.1);
+            position: absolute;
+            z-index: 49;
+            bottom: 0;
+            border-bottom-left-radius: 0.06rem;
+            border-bottom-right-radius: 0.06rem;
+          }
+        }
+
+        p {
+          font-size: 0.14rem;
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          margin-top: 0.1rem;
+          color: #666;
+
+          &:hover {
+            color: #000;
+            cursor: pointer;
+          }
+        }
+
+        .author {
+          display: flex;
+          align-items: center;
+          font-size: 0.12rem;
+          margin-top: 0.02rem;
+          width: 100%;
+
+          span {
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            color: #e2e2e2;
+
+            &:hover {
+              color: #999;
+              cursor: pointer;
+            }
+          }
+
+          i {
+            font-style: normal;
+            color: #e2e2e2;
+            user-select: none;
           }
         }
       }

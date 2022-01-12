@@ -4,7 +4,7 @@
       <!-- 个性推荐页 -->
       <el-tab-pane label="个性推荐" name="1">
         <!-- 轮播图 -->
-        <el-carousel type="card" :interval="5000">
+        <el-carousel type="card" :interval="5000" :initial-index="1">
           <el-carousel-item
             v-for="(bannerItem, index) in bannerList"
             :key="index"

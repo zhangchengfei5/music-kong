@@ -4,6 +4,21 @@
   </div>
 </template>
 
+<script>
+export default {
+  data() {
+    return {};
+  },
+  created() {
+    if (this.$router.path !== "/discover_music") {
+      this.$router.replace("/discover_music");
+    }
+  },
+  methods: {},
+};
+</script>
+
+
 <style>
 .all_wrapper {
   width: 100%;
