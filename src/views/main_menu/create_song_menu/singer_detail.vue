@@ -586,7 +586,7 @@ export default {
   background-color: #f0f1f2;
 }
 
-.mfsl_song_list:active {
+.mfsl_song_list:focus {
   background-color: #e5e5e5;
 }
 
