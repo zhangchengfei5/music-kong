@@ -31,6 +31,11 @@ const routes = [
         component: () => import("../views/main_menu/module/video_detail"),
       },
       {
+        path: "/hot_comment_detail",
+        name: "hot_comment_detail",
+        component: () => import("../views/main_menu/module/hot_comment_detail"),
+      },
+      {
         path: "/friends",
         name: "friends",
         component: () => import("../views/main_menu/friends"),

@@ -34,8 +34,23 @@ function formatterSongTime(time) {
   return songTime;
 }
 
+function wholeTime(time) {
+  let year = new Date(time).getFullYear();
+  let month = new Date(time).getMonth() + 1;
+  let day = new Date(time).getDate();
+  let hour = new Date(time).getHours();
+  let h = 0;
+  hour < 9 ? (h = "0" + hour) : (h = hour);
+  let m = 0;
+  let min = new Date(time).getMinutes();
+  min < 9 ? (m = "0" + min) : (m = min);
+  let t = year + "-" + month + "-" + day + "\n" + h + ":" + m;
+  return t;
+}
+
 module.exports = {
   formatterTime,
   playCount,
   formatterSongTime,
+  wholeTime,
 };

@@ -237,7 +237,39 @@ export default {
     // 切换歌单后重新获取数据
     getSlItem() {
       // 获取到传递过来的歌单对象
-      let listItem = decodeURIComponent(this.$route.query.slItem);
+      var encodeSearchKey = function (key) {
+        const encodeArr = [
+          {
+            code: "%",
+            encode: "%25",
+          },
+          {
+            code: "?",
+            encode: "%3F",
+          },
+          {
+            code: "#",
+            encode: "%23",
+          },
+          {
+            code: "&",
+            encode: "%26",
+          },
+          {
+            code: "=",
+            encode: "%3D",
+          },
+        ];
+        return key.replace(/[%?#&=]/g, ($) => {
+          for (const k of encodeArr) {
+            if (k.code === $) {
+              return k.encode;
+            }
+          }
+        });
+      };
+      let sI = encodeSearchKey(this.$route.query.slItem);
+      let listItem = decodeURIComponent(sI);
       this.slItem = JSON.parse(listItem);
       console.log("传过来的歌单对象数据233", this.slItem);
       if (Object.keys(this.slItem).length > 0) {

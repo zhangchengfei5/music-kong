@@ -1,11 +1,13 @@
 <template>
   <div class="video_detail_wrapper">
     <div class="video_detail_left">
-      <p>
+      <p @click="goBackVideo">
         <el-icon :size="16"><arrow-left /></el-icon>&nbsp;视频详情
       </p>
-      <video width="625" height="355" controls loop>
-        <source src="../../../assets/644.mp4" type="video/mp4" />
+      <video :src="videoUrl.url" width="625" height="355" controls>
+        <source :src="videoUrl.url" type="video/mp4" />
+        <source :src="videoUrl.url" type="video/ogg" />
+        <source :src="videoUrl.url" type="video/webm" />
         您的浏览器不支持 video 标签。
       </video>
       <!-- S-发布者信息 -->
@@ -22,17 +24,19 @@
       <!-- E-发布者信息 -->
       <div class="title">
         <p>{{ detailData.title }}&nbsp;</p>
-        <el-icon v-if="showDesc" :size="18" @click="showDesc = !showDesc"
-          ><caret-top
-        /></el-icon>
-        <el-icon v-else :size="18" @click="showDesc = !showDesc"
-          ><caret-bottom
-        /></el-icon>
+        <template v-if="detailData.description">
+          <el-icon v-if="showDesc" :size="18" @click="showDesc = !showDesc"
+            ><caret-top
+          /></el-icon>
+          <el-icon v-else :size="18" @click="showDesc = !showDesc"
+            ><caret-bottom
+          /></el-icon>
+        </template>
       </div>
       <div class="create_info">
-        <p>发布：{{ detailData.publishTime }}</p>
+        <p>发布：{{ formatterTime(detailData.publishTime) }}</p>
         &nbsp;&nbsp;
-        <p>播放：{{ detailData.playTime }}次</p>
+        <p>播放：{{ playCount(detailData.playTime) }}次</p>
       </div>
       <div class="video_tag">
         <span v-for="item in videoGroup" :key="item.id">{{ item.name }}</span>
@@ -41,9 +45,9 @@
       <!-- 视频操作 -->
       <div class="video_action">
         <div class="btn">
-          <i v-if="dianzan" class="iconfont icon-dianzan"></i
+          <i v-if="actionData.liked" class="iconfont icon-dianzan"></i
           ><i v-else class="iconfont icon-z-like"></i
-          ><span>&nbsp;赞({{ detailData.parisedCount }})</span>
+          ><span>&nbsp;赞({{ actionData.likedCount }})</span>
         </div>
         <div class="btn">
           <el-icon v-if="subscribed"><folder-checked /></el-icon>
@@ -52,14 +56,14 @@
         </div>
         <div class="btn">
           <el-icon><share /></el-icon
-          ><span>&nbsp;分享({{ detailData.shareCount }})</span>
+          ><span>&nbsp;分享({{ actionData.shareCount }})</span>
         </div>
       </div>
       <!-- 视频评论 -->
       <div class="video_comment">
         <div class="submit_comment">
           <span
-            >评论<i>({{ detailData.commentCount }})</i></span
+            >评论<i>({{ actionData.commentCount }})</i></span
           >
           <el-input
             v-model="comment"
@@ -72,19 +76,32 @@
           <button>评论</button>
         </div>
         <!-- S-精彩评论 -->
-        <div class="comment_content">
+        <div
+          v-if="currentPage < 2 && moreHot"
+          class="comment_content"
+          id="hotComment"
+        >
           <span>精彩评论</span>
           <!-- 精彩评论列表 -->
           <div class="comment_list">
             <!-- 列表个体容器 -->
-            <div class="comment_list_box">
-              <img src="../../../assets/images/bottomNav/songImg1.jpg" alt="" />
+            <div
+              class="comment_list_box"
+              v-for="item in hotComments"
+              :key="item.commentId"
+            >
+              <img :src="item.user ? item.user.avatarUrl : ''" alt="" />
               <div class="list_right">
-                <p><span>这是谁:</span>&nbsp;说了什么话呢？评论吗</p>
+                <p>
+                  <span>{{ item.user ? item.user.nickname : "未知用户" }}:</span
+                  >&nbsp;{{ item.content }}
+                </p>
                 <div class="time">
-                  <span>2022年1月1日 16:48</span>
+                  <span>{{ wholeTime(item.time) }}</span>
                   <p>
-                    <i class="iconfont icon-z-like"></i>&nbsp;
+                    <i v-if="item.liked" class="iconfont icon-dianzan"></i
+                    ><i v-else class="iconfont icon-z-like"></i>
+                    {{ item.likedCount ? item.likedCount : "" }}&nbsp;
                     <el-icon :size="12"><chat-line-round /></el-icon>
                   </p>
                 </div>
@@ -94,20 +111,39 @@
         </div>
         <!-- E-精彩评论 -->
 
+        <!-- 更多精彩评论 -->
+        <div
+          v-if="currentPage < 2 && moreHot"
+          class="more_hot"
+          @click="toHotCommentsDetail"
+        >
+          更多精彩评论 >
+        </div>
+
         <!-- S-最新评论 -->
-        <div class="comment_content">
-          <span>最新评论</span>
+        <div class="comment_content" id="larestComment">
+          <span>最新评论({{ actionData.commentCount }})</span>
           <!-- 精彩评论列表 -->
           <div class="comment_list">
             <!-- 列表个体容器 -->
-            <div class="comment_list_box">
-              <img src="../../../assets/images/bottomNav/songImg1.jpg" alt="" />
+            <div
+              class="comment_list_box"
+              v-for="item in comments"
+              :key="item.commentId"
+            >
+              <img :src="item.user ? item.user.avatarUrl : ''" alt="" />
               <div class="list_right">
-                <p><span>这是谁:</span>&nbsp;说了什么话呢？评论吗</p>
+                <p>
+                  <span>{{ item.user ? item.user.nickname : "未知用户" }}:</span
+                  >&nbsp;{{ item.content }}
+                </p>
                 <div class="time">
-                  <span>2022年1月1日 16:48</span>
+                  <!-- item.timeStr ? item.timeStr : item.time -->
+                  <span>{{ wholeTime(item.time) }}</span>
                   <p>
-                    <i class="iconfont icon-z-like"></i>&nbsp;
+                    <i v-if="item.liked" class="iconfont icon-dianzan"></i
+                    ><i v-else class="iconfont icon-z-like"></i>
+                    {{ item.likedCount ? item.likedCount : "" }}&nbsp;
                     <el-icon :size="12"><chat-line-round /></el-icon>
                   </p>
                 </div>
@@ -116,27 +152,43 @@
           </div>
         </div>
         <!-- E-最新评论 -->
+
+        <!-- S-分页功能 -->
+        <el-pagination
+          background
+          layout="prev, pager, next"
+          :total="actionData.commentCount"
+          v-model:current-page="currentPage"
+          :page-size="20"
+        >
+        </el-pagination>
+        <!-- E-分页功能 -->
       </div>
     </div>
     <div class="video_detail_right">
       <p>相关推荐</p>
       <div class="video_rc_list">
-        <div class="rc_list_box">
+        <div class="rc_list_box" v-for="item in relatedAllvideo" :key="item">
           <!-- 视频封面 -->
           <div class="video_img">
-            <img src="../../../assets/images/bottomNav/songImg1.jpg" alt="" />
+            <img :src="item.coverUrl" alt="" />
             <div class="play_count">
-              <el-icon :size="16"><video-play /></el-icon>88888
+              <el-icon :size="16"><video-play /></el-icon
+              >{{ playCount(item.playTime) }}
             </div>
-            <em>05:43</em>
+            <em>{{ formatterVideoTime(item.durationms) }}</em>
             <div class="bg_top"></div>
             <div class="bg_bottom"></div>
           </div>
           <div class="rc_title">
-            <p>就这？起码你得塞满两行吧？？不然你这怎么弄成第二行...呢</p>
+            <p>{{ item.title }}</p>
             <div class="author">
               <i>by</i>
-              <span>&nbsp;创作者</span>
+              <span
+                >&nbsp;{{
+                  item.creator.length > 0 ? item.creator[0].userName : "发布者"
+                }}</span
+              >
             </div>
           </div>
         </div>
@@ -147,6 +199,7 @@
 
 <script>
 import server from "@/utils/http.js";
+import util from "@/utils/util.js";
 
 export default {
   name: "video_detail",
@@ -157,20 +210,74 @@ export default {
       // 是否收藏了
       subscribed: false,
       // 是否点赞了
-      dianzan: false,
+      // dianzan: false,
       // 输入的评论
       comment: "",
       // 展开简介
       showDesc: false,
-
+      // 详情数据
       detailData: {},
+      // 创作者数据
       creator: {},
+      // 标签数据
       videoGroup: [],
+      // 点赞等数据
+      actionData: {},
+      // 视频Url
+      videoUrl: "",
+      // 相关视频
+      relatedAllvideo: [],
+      // 精彩评论数据
+      hotComments: [],
+      // 最新评论数据
+      comments: [],
+      // 是否还有更多评论
+      more: true,
+      moreHot: false,
+      // 当前所在页数
+      currentPage: 1,
     };
+  },
+  watch: {
+    currentPage: function (newVal, oldVal) {
+      console.log(oldVal);
+      this.currentPage = newVal;
+      this.getVideoComment();
+    },
+  },
+  computed: {
+    // 格式化时间
+    formatterTime: function () {
+      return function (time) {
+        return util.formatterTime(time);
+      };
+    },
+    // 格式化视频时间
+    formatterVideoTime: function () {
+      return function (time) {
+        return util.formatterSongTime(time);
+      };
+    },
+    // 播放次数
+    playCount: function () {
+      return function (count) {
+        return util.playCount(count);
+      };
+    },
+    // 完整的时间
+    wholeTime: function () {
+      return function (time) {
+        return util.wholeTime(time);
+      };
+    },
   },
   mounted() {
     this.videoId = this.$route.query.vid;
     this.getVideoDetail();
+    this.getRelatedAllvideo();
+    this.getDetailInfo();
+    this.getVideoUrl();
+    this.getVideoComment();
   },
   methods: {
     // 获取视频详情
@@ -192,6 +299,117 @@ export default {
           console.log(err);
         });
     },
+    // 获取相关视频
+    getRelatedAllvideo() {
+      let params = {};
+      let url = "/related/allvideo?id=" + this.videoId;
+      server
+        .get(url, params)
+        .then((res) => {
+          console.log("获取相关视频", res);
+          if (res.code != 200) {
+            this.$message.error("获取相关视频失败！");
+          }
+          res.data.forEach((i) => {
+            if (i.type == 1) {
+              this.relatedAllvideo.push(i);
+            }
+          });
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+    // 获取视频点赞转发评论数数据
+    getDetailInfo() {
+      let params = {};
+      let url = "/video/detail/info?vid=" + this.videoId;
+      server
+        .get(url, params)
+        .then((res) => {
+          console.log("获取视频点赞转发评论数数据：", res);
+          if (res.code != 200) {
+            this.$message.error("获取视频点赞转发评论数数据失败");
+          }
+          this.actionData = res;
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+    // 获取视频播放地址
+    getVideoUrl() {
+      let params = {};
+      let url = "/video/url?id=" + this.videoId;
+      server
+        .get(url, params)
+        .then((res) => {
+          console.log("获取视频播放地址", res);
+          if (res.code != 200) {
+            this.$message.error("获取视频播放地址失败");
+          }
+          this.videoUrl = res.urls[0];
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+    // 获取视频评论
+    getVideoComment() {
+      if (!this.more && this.comments.length > 0) return;
+      let params = {};
+      let url =
+        "/comment/video?id=" +
+        this.videoId +
+        "&offset=" +
+        (this.currentPage - 1) * 20;
+      server
+        .get(url, params)
+        .then((res) => {
+          console.log("获取视频评论", res);
+          if (res.code != 200) {
+            this.$message.error("获取视频评论失败");
+          }
+          if (this.more) {
+            this.hotComments = res.hotComments;
+            this.comments = res.comments;
+          }
+          this.moreHot = res.moreHot;
+          this.more = res.more;
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+    // 评论
+    // clickComment() {
+    //   let params = {};
+    //   params.id = this.videoId;
+    //   params.content = this.comment;
+    //   params.type = 5;
+    //   params.t = 1;
+    //   server
+    //     .post("/comment", params)
+    //     .then((res) => {
+    //       console.log("评论", res);
+    //       if (res.code != 200) {
+    //         this.$message.error("评论失败!");
+    //       }
+    //     })
+    //     .catch((err) => {
+    //       console.log(err);
+    //     });
+    // },
+    // 视频详情按钮点击
+    goBackVideo() {
+      let tag = this.$route.query.tag;
+      let gId = this.$route.query.groupId;
+      this.$router.replace("/video?tag=" + tag + "&groupId=" + gId);
+    },
+    toHotCommentsDetail() {
+      let id = this.videoId;
+      this.$router.push("/hot_comment_detail?id=" + id + "&type=" + 5);
+    },
   },
 };
 </script>
@@ -210,6 +428,16 @@ $theme: #cc66ff;
   padding: 0.15rem 0;
   overflow-y: auto;
   overflow-x: hidden;
+}
+/* 滚动条样式 */
+.video_detail_wrapper::-webkit-scrollbar {
+  background-color: #fff;
+  width: 0.04rem;
+}
+/* 设置滚动条的颜色和圆角 */
+.video_detail_wrapper::-webkit-scrollbar-thumb {
+  width: 0.1rem;
+  background-color: #e6e6e6;
 }
 .video_detail_left {
   display: flex;
@@ -358,6 +586,7 @@ $theme: #cc66ff;
     .submit_comment {
       display: flex;
       flex-direction: column;
+      margin-bottom: 0.1rem;
 
       span {
         font-size: 0.16rem;
@@ -383,12 +612,17 @@ $theme: #cc66ff;
       }
       button {
         padding: 0.05rem 0;
-        color: #333;
-        border: 1px solid #999;
+        color: #333333;
+        border: 1px solid #999999;
         border-radius: 0.3rem;
         background-color: #fff;
         width: 0.6rem;
         align-self: flex-end;
+
+        &:hover {
+          cursor: pointer;
+          background-color: rgba(50, 50, 50, 0.1);
+        }
       }
     }
     // 评论内容（精彩评论/最新评论）
@@ -400,7 +634,7 @@ $theme: #cc66ff;
         color: #333;
         font-weight: bold;
         font-size: 0.14rem;
-        margin-bottom: 0.1rem;
+        margin-bottom: 0.2rem;
       }
       .comment_list {
         display: flex;
@@ -455,6 +689,10 @@ $theme: #cc66ff;
                 font-size: 0.12rem;
               }
 
+              > p {
+                font-size: 0.13rem;
+              }
+
               i {
                 font-size: 0.16rem;
                 margin-left: 0.1rem;
@@ -467,6 +705,28 @@ $theme: #cc66ff;
           }
         }
       }
+    }
+
+    .more_hot {
+      font-size: 0.14rem;
+      border: 1px solid #e5e5e5;
+      width: 1rem;
+      padding: 0.05rem 0.2rem;
+      border-radius: 0.2rem;
+      margin: 0.1rem auto;
+      user-select: none;
+
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+      }
+    }
+
+    .el-pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 0.1rem;
     }
   }
 }
@@ -490,6 +750,7 @@ $theme: #cc66ff;
       display: flex;
       box-sizing: border-box;
       border-radius: 0.06rem;
+      margin-bottom: 0.1rem;
 
       .video_img {
         display: flex;

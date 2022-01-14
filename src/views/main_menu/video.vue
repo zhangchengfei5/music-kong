@@ -141,8 +141,18 @@ export default {
     this.getCategoryList();
     // 获取视频标签列表
     this.getGroupList();
-    // 获取全部视频
-    this.getTimelineAll();
+    if (!this.$route.query.tag) {
+      // 获取全部视频
+      this.getTimelineAll();
+    } else {
+      if (this.$route.query.tag == "全部视频") {
+        // 获取全部视频
+        this.getTimelineAll();
+      } else {
+        let id = this.$route.query.groupId;
+        this.getVideoGroup(id);
+      }
+    }
   },
   mounted() {
     this.scrollData();
@@ -318,7 +328,14 @@ export default {
 
     // 跳转到视频详情页
     toVideoDetail(id) {
-      this.$router.push("/video_detail?vid=" + id);
+      this.$router.push(
+        "/video_detail?vid=" +
+          id +
+          "&tag=" +
+          this.tagName +
+          "&groupId=" +
+          this.groupId
+      );
     },
   },
 };
