@@ -143,7 +143,7 @@ $theme: #cc66ff;
   > span {
     color: #333;
     font-weight: bold;
-    font-size: 0.14rem;
+    font-size: 0.18rem;
     margin-bottom: 0.2rem;
   }
   .comment_list {

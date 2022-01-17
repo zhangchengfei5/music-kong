@@ -168,7 +168,12 @@
     <div class="video_detail_right">
       <p>相关推荐</p>
       <div class="video_rc_list">
-        <div class="rc_list_box" v-for="item in relatedAllvideo" :key="item">
+        <div
+          class="rc_list_box"
+          v-for="item in relatedAllvideo"
+          :key="item"
+          @click="switchVideo(item.vid)"
+        >
           <!-- 视频封面 -->
           <div class="video_img">
             <img :src="item.coverUrl" alt="" />
@@ -209,8 +214,6 @@ export default {
       videoId: "",
       // 是否收藏了
       subscribed: false,
-      // 是否点赞了
-      // dianzan: false,
       // 输入的评论
       comment: "",
       // 展开简介
@@ -310,11 +313,13 @@ export default {
           if (res.code != 200) {
             this.$message.error("获取相关视频失败！");
           }
+          let v = [];
           res.data.forEach((i) => {
             if (i.type == 1) {
-              this.relatedAllvideo.push(i);
+              v.push(i);
             }
           });
+          this.relatedAllvideo = v;
         })
         .catch((err) => {
           console.log(err);
@@ -381,34 +386,25 @@ export default {
           console.log(err);
         });
     },
-    // 评论
-    // clickComment() {
-    //   let params = {};
-    //   params.id = this.videoId;
-    //   params.content = this.comment;
-    //   params.type = 5;
-    //   params.t = 1;
-    //   server
-    //     .post("/comment", params)
-    //     .then((res) => {
-    //       console.log("评论", res);
-    //       if (res.code != 200) {
-    //         this.$message.error("评论失败!");
-    //       }
-    //     })
-    //     .catch((err) => {
-    //       console.log(err);
-    //     });
-    // },
     // 视频详情按钮点击
     goBackVideo() {
       let tag = this.$route.query.tag;
       let gId = this.$route.query.groupId;
       this.$router.replace("/video?tag=" + tag + "&groupId=" + gId);
     },
+    // 更多详情评论
     toHotCommentsDetail() {
       let id = this.videoId;
       this.$router.push("/hot_comment_detail?id=" + id + "&type=" + 5);
+    },
+    // 点击相关视频
+    switchVideo(vid) {
+      this.videoId = vid;
+      this.getVideoDetail();
+      this.getRelatedAllvideo();
+      this.getDetailInfo();
+      this.getVideoUrl();
+      this.getVideoComment();
     },
   },
 };

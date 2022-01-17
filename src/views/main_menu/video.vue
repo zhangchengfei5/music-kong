@@ -89,7 +89,54 @@
         </div>
         <!-- E-视频容器 -->
       </el-tab-pane>
-      <el-tab-pane label="MV" name="mv"> </el-tab-pane>
+      <el-tab-pane label="MV" name="mv">
+        <div
+          class="mv_box"
+          v-loading="mvLoading"
+          element-loading-text="加载中..."
+          :style="mvLoading ? 'height:200px;width:100%;' : ''"
+        >
+          <mv-list title="最新MV" :mvData="firstMv"></mv-list>
+          <mv-list title="最热MV" :mvData="hotMv"></mv-list>
+          <mv-list title="网易出品MV" :mvData="exclusiveMv"></mv-list>
+          <div class="mv_rank_box">
+            <div class="mvRank_header">
+              <span
+                >MV排行榜&nbsp;<el-icon :size="16"><arrow-right /></el-icon
+              ></span>
+              <div class="rank_tag_box">
+                <span class="active_tag">内地</span>
+                <span>港台</span>
+                <span>欧美</span>
+                <span>日本</span>
+                <span>韩国</span>
+              </div>
+            </div>
+            <div class="mvRank_main">
+              <div
+                class="rank_box"
+                v-for="(item, index) in mvRank"
+                :key="item.id"
+                :class="(index + 1) % 2 == 0 ? 'mv_shuang' : ''"
+              >
+                <i>{{ getIndexNum(index) }}</i>
+                <div class="mv_img">
+                  <img :src="item.cover" />
+                  <div class="play_count">
+                    <el-icon :size="16"><video-play /></el-icon
+                    >{{ playCount(item.playCount) }}
+                  </div>
+                  <div class="bg_top"></div>
+                </div>
+                <div class="mv_title">
+                  <p>{{ item.name }}</p>
+                  <span>{{ item.artistName }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
@@ -97,9 +144,13 @@
 <script>
 import server from "../../utils/http.js";
 import util from "@/utils/util.js";
+import mvList from "../../components/mv_list";
 
 export default {
   name: "videoPage",
+  components: {
+    mvList,
+  },
   data() {
     return {
       activeName: "video",
@@ -119,7 +170,33 @@ export default {
       // 成功取出视频的次数
       vCount: 0,
       hasmore: true,
+
+      // MVtab项
+      mvStatus: false,
+      mvLoading: true,
+      // 最新MV
+      firstMv: [],
+      // 最热MV
+      hotMv: [],
+      // 网易出品MV
+      exclusiveMv: [],
+      // MV排行
+      mvRank: [],
     };
+  },
+  watch: {
+    activeName: function (newVal, oldVal) {
+      console.log(oldVal);
+      if (newVal == "mv") {
+        if (!this.mvStatus) {
+          this.getFirstMv();
+          this.getHotMv();
+          this.getExclusiveMv();
+          this.getTopMv();
+          this.mvStatus = true;
+        }
+      }
+    },
   },
   computed: {
     playCount: function () {
@@ -314,18 +391,19 @@ export default {
     // 视频滚动到底部自动加载
     scrollData() {
       let list = document.getElementsByClassName("video_wrapper")[0];
-      if (list.scrollHeight - list.scrollTop <= list.clientHeight) {
-        if (this.hasmore && !this.videoLoading) {
-          this.videoLoading = true;
-        }
-        if (this.tagName == "全部视频") {
-          this.getTimelineAll();
-        } else {
-          this.getVideoGroup(this.groupId);
+      if (this.activeName == "video") {
+        if (list.scrollHeight - list.scrollTop <= list.clientHeight) {
+          if (this.hasmore && !this.videoLoading) {
+            this.videoLoading = true;
+          }
+          if (this.tagName == "全部视频") {
+            this.getTimelineAll();
+          } else {
+            this.getVideoGroup(this.groupId);
+          }
         }
       }
     },
-
     // 跳转到视频详情页
     toVideoDetail(id) {
       this.$router.push(
@@ -336,6 +414,86 @@ export default {
           "&groupId=" +
           this.groupId
       );
+    },
+
+    // 获取最新MV
+    getFirstMv() {
+      let params = {};
+      let url = "/mv/first?limit=" + 8;
+      server
+        .get(url, params)
+        .then((res) => {
+          console.log("获取最新MV", res);
+          if (res.code != 200) {
+            this.$message.error("获取最新MV失败！");
+          }
+          this.firstMv = res.data;
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+    // 获取最热MV
+    getHotMv() {
+      let params = {};
+      let url = "/mv/all?limit=" + 8 + "&order=最热";
+      server
+        .get(url, params)
+        .then((res) => {
+          console.log("获取最热MV", res);
+          if (res.code != 200) {
+            this.$message.error("获取最热MV失败！");
+          }
+          this.hotMv = res.data;
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+    // 获取网易出品MV
+    getExclusiveMv() {
+      let params = {};
+      let url = "/mv/exclusive/rcmd?limit=" + 8;
+      server
+        .get(url, params)
+        .then((res) => {
+          console.log("获取网易出品MV", res);
+          if (res.code != 200) {
+            this.$message.error("获取网易出品MV失败！");
+          }
+          this.exclusiveMv = res.data;
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+    // 获取MV排行
+    getTopMv() {
+      let params = {};
+      let url = "/top/mv?limit=" + 10;
+      server
+        .get(url, params)
+        .then((res) => {
+          console.log("获取MV排行", res);
+          if (res.code != 200) {
+            this.$message.error("获取MV排行失败！");
+          }
+          this.mvRank = res.data;
+          this.mvLoading = false;
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+    // 自定义歌单列表的索引
+    getIndexNum(num) {
+      if (num < 9) {
+        let num1 = num + 1;
+        return "0" + num1;
+      } else {
+        let num2 = num + 1;
+        return num2;
+      }
     },
   },
 };
@@ -569,6 +727,149 @@ $theme: #cc66ff;
             color: #e2e2e2;
             user-select: none;
           }
+        }
+      }
+    }
+  }
+
+  .mv_box {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+
+    .mv_rank_box {
+      display: flex;
+      flex-direction: column;
+
+      .mvRank_header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.1rem;
+
+        > span {
+          font-size: 0.18rem;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+        }
+
+        .rank_tag_box {
+          display: flex;
+          align-items: center;
+          font-size: 0.12rem;
+
+          > span {
+            color: #666;
+            margin-right: 0.1rem;
+            padding: 0.05rem 0.1rem;
+
+            &:hover {
+              cursor: pointer;
+              color: #000;
+            }
+          }
+        }
+      }
+
+      .mvRank_main {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+
+        .rank_box {
+          display: flex;
+          align-items: center;
+          border-bottom: 1px solid #e5e5e5;
+          border-right: 1px solid #e5e5e5;
+          padding: 0.2rem 0;
+
+          i {
+            font-style: normal;
+            font-size: 0.2rem;
+            color: #999;
+          }
+
+          .mv_img {
+            display: flex;
+            position: relative;
+            margin: 0 0.1rem;
+
+            &:hover {
+              cursor: pointer;
+            }
+
+            > img {
+              width: 1.8rem;
+              height: 1rem;
+              object-fit: cover;
+              border-radius: 0.06rem;
+            }
+
+            .play_count {
+              color: #fff;
+              font-size: 0.12rem;
+              position: absolute;
+              z-index: 50;
+              top: 0.02rem;
+              right: 0.05rem;
+              display: flex;
+              align-items: center;
+
+              .el-icon {
+                margin-right: 0.03rem;
+                color: #fff;
+              }
+            }
+
+            .bg_top {
+              height: 0.21rem;
+              width: 100%;
+              background-color: rgba(0, 0, 0, 0.1);
+              position: absolute;
+              z-index: 49;
+              top: 0;
+              border-top-left-radius: 0.06rem;
+              border-top-right-radius: 0.06rem;
+            }
+          }
+
+          .mv_title {
+            display: flex;
+            flex-direction: column;
+            max-width: 1.8rem;
+            height: 1rem;
+
+            p {
+              overflow: hidden;
+              white-space: nowrap;
+              text-overflow: ellipsis;
+              color: #666;
+              font-size: 0.14rem;
+              margin-bottom: 0.15rem;
+
+              &:hover {
+                color: #000;
+                cursor: pointer;
+              }
+            }
+
+            span {
+              font-size: 0.12rem;
+              color: #666;
+
+              &:hover {
+                color: #000;
+                cursor: pointer;
+              }
+            }
+          }
+        }
+
+        .mv_shuang {
+          border-right: none;
+          padding-left: 0.1rem;
         }
       }
     }
