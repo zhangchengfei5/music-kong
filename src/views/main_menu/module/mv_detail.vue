@@ -1,30 +1,28 @@
 <template>
-  <div class="video_detail_wrapper">
-    <div class="video_detail_left">
-      <p @click="goBackVideo">
-        <el-icon :size="16"><arrow-left /></el-icon>&nbsp;视频详情
+  <div class="mv_detail_wrapper">
+    <div class="mv_detail_left">
+      <p @click="goBackMv">
+        <el-icon :size="16"><arrow-left /></el-icon>&nbsp;MV详情
       </p>
-      <video :src="videoUrl.url" width="625" height="355" controls>
-        <source :src="videoUrl.url" type="video/mp4" />
-        <source :src="videoUrl.url" type="video/ogg" />
-        <source :src="videoUrl.url" type="video/webm" />
-        您的浏览器不支持 video 标签。
+      <video :src="mvUrl.url" width="625" height="355" controls>
+        <source :src="mvUrl.url" type="video/mp4" />
+        <source :src="mvUrl.url" type="video/ogg" />
+        <source :src="mvUrl.url" type="video/webm" />
+        您的浏览器不支持 mv 标签。
       </video>
       <!-- S-发布者信息 -->
       <div class="author">
         <div class="avatar">
-          <img :src="detailData.avatarUrl" alt="" />
-          <p>{{ creator.nickname }}</p>
-        </div>
-        <!-- 关注 -->
-        <div class="follow">
-          <el-icon :size="14"><plus /></el-icon>&nbsp;关注
+          <img :src="creator[0] ? creator[0].img1v1Url : ''" alt="" />
+          <p v-for="(item, index) in creator" :key="item.id">
+            {{ item.name }}<i v-if="index != creator.length - 1"> /</i>
+          </p>
         </div>
       </div>
       <!-- E-发布者信息 -->
       <div class="title">
-        <p>{{ detailData.title }}&nbsp;</p>
-        <template v-if="detailData.description">
+        <p>{{ detailData.name }}&nbsp;</p>
+        <template v-if="detailData.desc">
           <el-icon v-if="showDesc" :size="18" @click="showDesc = !showDesc"
             ><caret-top
           /></el-icon>
@@ -34,16 +32,16 @@
         </template>
       </div>
       <div class="create_info">
-        <p>发布：{{ formatterTime(detailData.publishTime) }}</p>
+        <p>发布：{{ detailData.publishTime }}</p>
         &nbsp;&nbsp;
-        <p>播放：{{ playCount(detailData.playTime) }}次</p>
+        <p>播放：{{ playCount(detailData.playCount) }}次</p>
       </div>
-      <div class="video_tag">
-        <span v-for="item in videoGroup" :key="item.id">{{ item.name }}</span>
+      <div class="mv_tag" v-if="mvGroup">
+        <span v-for="item in mvGroup" :key="item.id">{{ item.name }}</span>
       </div>
-      <p v-show="showDesc" class="video_desc">{{ detailData.description }}</p>
-      <!-- 视频操作 -->
-      <div class="video_action">
+      <p v-show="showDesc" class="mv_desc">{{ detailData.desc }}</p>
+      <!-- MV操作 -->
+      <div class="mv_action">
         <div class="btn">
           <i v-if="actionData.liked" class="iconfont icon-dianzan"></i
           ><i v-else class="iconfont icon-z-like"></i
@@ -52,15 +50,15 @@
         <div class="btn">
           <el-icon v-if="subscribed"><folder-checked /></el-icon>
           <el-icon v-else><folder-add /></el-icon>
-          <span>&nbsp;收藏({{ detailData.subscribeCount }})</span>
+          <span>&nbsp;收藏({{ detailData.subCount }})</span>
         </div>
         <div class="btn">
           <el-icon><share /></el-icon
           ><span>&nbsp;分享({{ actionData.shareCount }})</span>
         </div>
       </div>
-      <!-- 视频评论 -->
-      <div class="video_comment">
+      <!-- MV评论 -->
+      <div class="mv_comment">
         <div class="submit_comment">
           <span
             >评论<i>({{ actionData.commentCount }})</i></span
@@ -165,33 +163,33 @@
         <!-- E-分页功能 -->
       </div>
     </div>
-    <div class="video_detail_right">
+    <div class="mv_detail_right">
       <p>相关推荐</p>
-      <div class="video_rc_list">
+      <div class="mv_rc_list">
         <div
           class="rc_list_box"
-          v-for="item in relatedAllvideo"
+          v-for="item in relatedAllmv"
           :key="item"
-          @click="switchVideo(item.vid)"
+          @click="switchMv(item.id)"
         >
-          <!-- 视频封面 -->
-          <div class="video_img">
-            <img :src="item.coverUrl" alt="" />
+          <!-- MV封面 -->
+          <div class="mv_img">
+            <img :src="item.cover" alt="" />
             <div class="play_count">
               <el-icon :size="16"><video-play /></el-icon
-              >{{ playCount(item.playTime) }}
+              >{{ playCount(item.playCount) }}
             </div>
-            <em>{{ formatterVideoTime(item.durationms) }}</em>
+            <em>{{ formatterMvTime(item.duration) }}</em>
             <div class="bg_top"></div>
             <div class="bg_bottom"></div>
           </div>
           <div class="rc_title">
-            <p>{{ item.title }}</p>
+            <p>{{ item.name }}</p>
             <div class="author">
               <i>by</i>
               <span
                 >&nbsp;{{
-                  item.creator.length > 0 ? item.creator[0].userName : "发布者"
+                  item.artists.length > 0 ? item.artists[0].name : "发布者"
                 }}</span
               >
             </div>
@@ -207,11 +205,11 @@ import server from "@/utils/http.js";
 import util from "@/utils/util.js";
 
 export default {
-  name: "video_detail",
+  name: "mv_detail",
   data() {
     return {
-      // 视频ID
-      videoId: "",
+      // MVID
+      mvId: "",
       // 是否收藏了
       subscribed: false,
       // 输入的评论
@@ -221,15 +219,15 @@ export default {
       // 详情数据
       detailData: {},
       // 创作者数据
-      creator: {},
+      creator: [],
       // 标签数据
-      videoGroup: [],
+      mvGroup: [],
       // 点赞等数据
       actionData: {},
-      // 视频Url
-      videoUrl: "",
-      // 相关视频
-      relatedAllvideo: [],
+      // MVUrl
+      mvUrl: {},
+      // 相关MV
+      relatedAllmv: [],
       // 精彩评论数据
       hotComments: [],
       // 最新评论数据
@@ -245,18 +243,12 @@ export default {
     currentPage: function (newVal, oldVal) {
       console.log(oldVal);
       this.currentPage = newVal;
-      this.getVideoComment();
+      this.getMvComment();
     },
   },
   computed: {
-    // 格式化时间
-    formatterTime: function () {
-      return function (time) {
-        return util.formatterTime(time);
-      };
-    },
-    // 格式化视频时间
-    formatterVideoTime: function () {
+    // 格式化MV时间
+    formatterMvTime: function () {
       return function (time) {
         return util.formatterSongTime(time);
       };
@@ -275,66 +267,60 @@ export default {
     },
   },
   mounted() {
-    this.videoId = this.$route.query.vid;
-    this.getVideoDetail();
-    this.getRelatedAllvideo();
+    this.mvId = this.$route.query.mvid;
+    this.getMvDetail();
+    this.getRelatedAllmv();
     this.getDetailInfo();
-    this.getVideoUrl();
-    this.getVideoComment();
+    this.getMvUrl();
+    this.getMvComment();
   },
   methods: {
-    // 获取视频详情
-    getVideoDetail() {
+    // 获取MV详情
+    getMvDetail() {
       let params = {};
       server
-        .get("/video/detail?id=" + this.videoId, params)
+        .get("/mv/detail?mvid=" + this.mvId, params)
         .then((res) => {
-          console.log("获取视频详情", res);
+          console.log("获取MV详情", res);
           if (res.code != 200) {
-            this.$message.error("获取视频详情失败！");
+            this.$message.error("获取MV详情失败！");
             return;
           }
           this.detailData = res.data;
-          this.creator = res.data.creator;
-          this.videoGroup = res.data.videoGroup;
+          this.creator = res.data.artists;
+          this.mvGroup = res.data.videoGroup;
         })
         .catch((err) => {
           console.log(err);
         });
     },
-    // 获取相关视频
-    getRelatedAllvideo() {
+    // 获取相关MV
+    getRelatedAllmv() {
       let params = {};
-      let url = "/related/allvideo?id=" + this.videoId;
+      let url = "/simi/mv?mvid=" + this.mvId;
       server
         .get(url, params)
         .then((res) => {
-          console.log("获取相关视频", res);
+          console.log("获取相关MV", res);
           if (res.code != 200) {
-            this.$message.error("获取相关视频失败！");
+            this.$message.error("获取相关MV失败！");
           }
-          let v = [];
-          res.data.forEach((i) => {
-            if (i.type == 1) {
-              v.push(i);
-            }
-          });
-          this.relatedAllvideo = v;
+          this.relatedAllmv = res.mvs;
         })
         .catch((err) => {
           console.log(err);
         });
     },
-    // 获取视频点赞转发评论数数据
+    // 获取MV点赞转发评论数数据
     getDetailInfo() {
       let params = {};
-      let url = "/video/detail/info?vid=" + this.videoId;
+      let url = "/mv/detail/info?mvid=" + this.mvId;
       server
         .get(url, params)
         .then((res) => {
-          console.log("获取视频点赞转发评论数数据：", res);
+          console.log("获取MV点赞转发评论数数据：", res);
           if (res.code != 200) {
-            this.$message.error("获取视频点赞转发评论数数据失败");
+            this.$message.error("获取MV点赞转发评论数数据失败");
           }
           this.actionData = res;
         })
@@ -342,41 +328,41 @@ export default {
           console.log(err);
         });
     },
-    // 获取视频播放地址
-    getVideoUrl() {
+    // 获取MV播放地址
+    getMvUrl() {
       let params = {};
-      let url = "/video/url?id=" + this.videoId;
+      let url = "/mv/url?id=" + this.mvId;
       server
         .get(url, params)
         .then((res) => {
-          console.log("获取视频播放地址", res);
+          console.log("获取MV播放地址", res);
           if (res.code != 200) {
-            this.$message.error("获取视频播放地址失败");
+            this.$message.error("获取MV播放地址失败");
           }
-          this.videoUrl = res.urls[0];
+          this.mvUrl = res.data;
         })
         .catch((err) => {
           console.log(err);
         });
     },
-    // 获取视频评论
-    getVideoComment() {
+    // 获取MV评论
+    getMvComment() {
       if (!this.more && this.comments.length > 0) return;
       let params = {};
       let url =
-        "/comment/video?id=" +
-        this.videoId +
+        "/comment/mv?id=" +
+        this.mvId +
         "&offset=" +
         (this.currentPage - 1) * 20;
       server
         .get(url, params)
         .then((res) => {
-          console.log("获取视频评论", res);
+          console.log("获取MV评论", res);
           if (res.code != 200) {
-            this.$message.error("获取视频评论失败");
+            this.$message.error("获取MV评论失败");
           }
           if (this.more) {
-            this.hotComments = res.hotComments;
+            this.hotComments = res.hotComments.slice(0, 10);
             this.comments = res.comments;
           }
           this.moreHot = res.moreHot;
@@ -386,25 +372,23 @@ export default {
           console.log(err);
         });
     },
-    // 视频详情按钮点击
-    goBackVideo() {
-      let tag = this.$route.query.tag;
-      let gId = this.$route.query.groupId;
-      this.$router.replace("/video?tag=" + tag + "&groupId=" + gId);
+    // MV详情按钮点击
+    goBackMv() {
+      this.$router.go(-1);
     },
     // 更多详情评论
     toHotCommentsDetail() {
-      let id = this.videoId;
-      this.$router.push("/hot_comment_detail?id=" + id + "&type=" + 5);
+      let id = this.mvId;
+      this.$router.push("/hot_comment_detail?id=" + id + "&type=" + 1);
     },
-    // 点击相关视频
-    switchVideo(vid) {
-      this.videoId = vid;
-      this.getVideoDetail();
-      this.getRelatedAllvideo();
+    // 点击相关MV
+    switchMv(vid) {
+      this.mvId = vid;
+      this.getMvDetail();
+      this.getRelatedAllmv();
       this.getDetailInfo();
-      this.getVideoUrl();
-      this.getVideoComment();
+      this.getMvUrl();
+      this.getMvComment();
     },
   },
 };
@@ -412,7 +396,7 @@ export default {
 
 <style lang="scss" scoped>
 $theme: #cc66ff;
-.video_detail_wrapper {
+.mv_detail_wrapper {
   display: flex;
   position: absolute;
   z-index: 500;
@@ -426,16 +410,16 @@ $theme: #cc66ff;
   overflow-x: hidden;
 }
 /* 滚动条样式 */
-.video_detail_wrapper::-webkit-scrollbar {
+.mv_detail_wrapper::-webkit-scrollbar {
   background-color: #fff;
   width: 0.04rem;
 }
 /* 设置滚动条的颜色和圆角 */
-.video_detail_wrapper::-webkit-scrollbar-thumb {
+.mv_detail_wrapper::-webkit-scrollbar-thumb {
   width: 0.1rem;
   background-color: #e6e6e6;
 }
-.video_detail_left {
+.mv_detail_left {
   display: flex;
   flex-direction: column;
   width: 6.3rem;
@@ -478,23 +462,14 @@ $theme: #cc66ff;
           color: #000;
           cursor: pointer;
         }
+
+        i {
+          user-select: none;
+        }
       }
     }
-
-    .follow {
-      height: 0.2rem;
-      line-height: 0.2rem;
-      padding: 0.05rem 0.15rem;
-      border-radius: 0.15rem;
-      display: flex;
-      align-items: center;
-      font-size: 0.14rem;
-      color: red;
-      background-color: rgba(255, 0, 0, 0.1);
-      cursor: pointer;
-    }
   }
-  // 视频标题
+  // MV标题
   .title {
     display: flex;
     align-items: center;
@@ -515,7 +490,7 @@ $theme: #cc66ff;
     margin-bottom: 0.1rem;
   }
   // 标签
-  .video_tag {
+  .mv_tag {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
@@ -532,7 +507,7 @@ $theme: #cc66ff;
     }
   }
   // 简介
-  .video_desc {
+  .mv_desc {
     font-size: 0.13rem;
     color: #373737;
     user-select: none;
@@ -541,8 +516,8 @@ $theme: #cc66ff;
     cursor: auto;
     margin-bottom: 0.1rem;
   }
-  // 视频操作
-  .video_action {
+  // MV操作
+  .mv_action {
     display: flex;
     align-items: center;
     margin: 0.2rem 0;
@@ -572,8 +547,8 @@ $theme: #cc66ff;
       }
     }
   }
-  //视频评论
-  .video_comment {
+  //MV评论
+  .mv_comment {
     display: flex;
     flex-direction: column;
     padding: 0.1rem 0;
@@ -726,7 +701,7 @@ $theme: #cc66ff;
     }
   }
 }
-.video_detail_right {
+.mv_detail_right {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -738,7 +713,7 @@ $theme: #cc66ff;
     margin-bottom: 0.1rem;
   }
 
-  .video_rc_list {
+  .mv_rc_list {
     display: flex;
     flex-direction: column;
 
@@ -748,7 +723,7 @@ $theme: #cc66ff;
       border-radius: 0.06rem;
       margin-bottom: 0.1rem;
 
-      .video_img {
+      .mv_img {
         display: flex;
         position: relative;
 

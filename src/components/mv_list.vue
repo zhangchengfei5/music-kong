@@ -1,11 +1,22 @@
 <template>
   <div class="list_wrapper">
-    <span
-      >{{ title }}&nbsp;<el-icon :size="16"><arrow-right /></el-icon
-    ></span>
+    <div class="list_header">
+      <span
+        >{{ title }}&nbsp;<el-icon :size="16"><arrow-right /></el-icon
+      ></span>
+      <div v-if="title == '最新MV'" class="tag_box">
+        <em
+          v-for="(item, index) in firstMvTag"
+          :key="index"
+          :class="item == tag ? 'active_tag' : ''"
+          @click="clickTag(item)"
+          >{{ item }}</em
+        >
+      </div>
+    </div>
     <div class="list_box">
       <div class="content_box" v-for="item in mvData" :key="item.id">
-        <div class="img_box">
+        <div class="img_box" @click="toMvDetail(item.id)">
           <img :src="item.cover" alt="" />
           <div class="playCount">
             <el-icon :size="16"><video-play /></el-icon>&nbsp;{{
@@ -14,7 +25,7 @@
           </div>
           <div class="bg_top"></div>
         </div>
-        <p>{{ item.name }}</p>
+        <p @click="toMvDetail(item.id)">{{ item.name }}</p>
         <span v-if="title != '网易出品MV'">{{ item.artistName }}</span>
       </div>
     </div>
@@ -34,10 +45,29 @@ export default {
       };
     },
   },
+  data() {
+    return {
+      firstMvTag: ["内地", "港台", "欧美", "日本", "韩国"],
+      tag: "内地",
+    };
+  },
+  methods: {
+    clickTag(area) {
+      if (this.tag == area) return;
+      this.tag = area;
+      console.log(this.tag);
+      this.$emit("switchFirstMv", area);
+    },
+    // 跳转到MV详情页
+    toMvDetail(id) {
+      this.$router.push("/mv_detail?mvid=" + id);
+    },
+  },
 };
 </script>
 
 <style lang="scss" scoped>
+$theme: #cc66ff;
 .list_wrapper {
   display: flex;
   flex-direction: column;
@@ -45,12 +75,36 @@ export default {
   height: 100%;
   margin-bottom: 0.3rem;
 
-  > span {
-    font-size: 0.18rem;
-    cursor: pointer;
-    margin-bottom: 0.1rem;
+  .list_header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
+    margin-bottom: 0.1rem;
+
+    > span {
+      font-size: 0.18rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+
+    .tag_box {
+      display: flex;
+      align-items: center;
+
+      em {
+        font-style: normal;
+        font-size: 0.12rem;
+        padding: 0.05rem 0.1rem;
+        color: #666;
+        margin-right: 0.1rem;
+
+        &:hover {
+          cursor: pointer;
+          color: #000;
+        }
+      }
+    }
   }
 
   .list_box {
@@ -136,5 +190,11 @@ export default {
       }
     }
   }
+}
+
+.active_tag {
+  background-color: #fff0ff;
+  color: $theme !important;
+  border-radius: 0.3rem;
 }
 </style>

@@ -94,9 +94,12 @@
           class="mv_box"
           v-loading="mvLoading"
           element-loading-text="加载中..."
-          :style="mvLoading ? 'height:200px;width:100%;' : ''"
         >
-          <mv-list title="最新MV" :mvData="firstMv"></mv-list>
+          <mv-list
+            title="最新MV"
+            :mvData="firstMv"
+            @switchFirstMv="getFirstMv"
+          ></mv-list>
           <mv-list title="最热MV" :mvData="hotMv"></mv-list>
           <mv-list title="网易出品MV" :mvData="exclusiveMv"></mv-list>
           <div class="mv_rank_box">
@@ -105,14 +108,20 @@
                 >MV排行榜&nbsp;<el-icon :size="16"><arrow-right /></el-icon
               ></span>
               <div class="rank_tag_box">
-                <span class="active_tag">内地</span>
-                <span>港台</span>
-                <span>欧美</span>
-                <span>日本</span>
-                <span>韩国</span>
+                <span
+                  v-for="(item, index) in mvRankTag"
+                  :key="index"
+                  :class="item == clickRankTag ? 'active_tag' : ''"
+                  @click="getTopMv(item)"
+                  >{{ item }}</span
+                >
               </div>
             </div>
-            <div class="mvRank_main">
+            <div
+              class="mvRank_main"
+              v-loading="mvRankLoading"
+              element-loading-text="加载中..."
+            >
               <div
                 class="rank_box"
                 v-for="(item, index) in mvRank"
@@ -120,7 +129,7 @@
                 :class="(index + 1) % 2 == 0 ? 'mv_shuang' : ''"
               >
                 <i>{{ getIndexNum(index) }}</i>
-                <div class="mv_img">
+                <div class="mv_img" @click="toMvDetail(item.id)">
                   <img :src="item.cover" />
                   <div class="play_count">
                     <el-icon :size="16"><video-play /></el-icon
@@ -129,7 +138,7 @@
                   <div class="bg_top"></div>
                 </div>
                 <div class="mv_title">
-                  <p>{{ item.name }}</p>
+                  <p @click="toMvDetail(item.id)">{{ item.name }}</p>
                   <span>{{ item.artistName }}</span>
                 </div>
               </div>
@@ -182,6 +191,10 @@ export default {
       exclusiveMv: [],
       // MV排行
       mvRank: [],
+      mvRankLoading: true,
+      // MV排行分类
+      mvRankTag: ["内地", "港台", "欧美", "日本", "韩国"],
+      clickRankTag: "内地",
     };
   },
   watch: {
@@ -218,7 +231,7 @@ export default {
     this.getCategoryList();
     // 获取视频标签列表
     this.getGroupList();
-    if (!this.$route.query.tag) {
+    if (!this.$route.query.tag || this.$route.query.tag == "undefined") {
       // 获取全部视频
       this.getTimelineAll();
     } else {
@@ -349,10 +362,13 @@ export default {
     getVideoGroup(id) {
       if (!this.hasmore && this.vCount != 0) return;
       let params = {};
-      params.offset = 8 * this.vCount;
+      let offset = 8 * this.vCount;
       let timestamp = Date.now();
       server
-        .get("/video/group?id=" + id + "&t=" + timestamp, params)
+        .get(
+          "/video/group?id=" + id + "&offset=" + offset + "&t=" + timestamp,
+          params
+        )
         .then((res) => {
           console.log("获取视频标签/分类下的视频", res);
           if (res.code != 200) {
@@ -417,9 +433,10 @@ export default {
     },
 
     // 获取最新MV
-    getFirstMv() {
+    getFirstMv(area = "内地") {
       let params = {};
-      let url = "/mv/first?limit=" + 8;
+      let diqu = area;
+      let url = "/mv/first?limit=" + 8 + "&area=" + diqu;
       server
         .get(url, params)
         .then((res) => {
@@ -462,15 +479,20 @@ export default {
             this.$message.error("获取网易出品MV失败！");
           }
           this.exclusiveMv = res.data;
+          this.mvLoading = false;
         })
         .catch((err) => {
           console.log(err);
         });
     },
     // 获取MV排行
-    getTopMv() {
+    getTopMv(area = "内地") {
+      if (this.clickRankTag == area && this.mvRank.length > 0) return;
+      this.clickRankTag = area;
+      this.mvRankLoading = true;
       let params = {};
-      let url = "/top/mv?limit=" + 10;
+      let diqu = area;
+      let url = "/top/mv?limit=" + 10 + "&area=" + diqu;
       server
         .get(url, params)
         .then((res) => {
@@ -479,7 +501,7 @@ export default {
             this.$message.error("获取MV排行失败！");
           }
           this.mvRank = res.data;
-          this.mvLoading = false;
+          this.mvRankLoading = false;
         })
         .catch((err) => {
           console.log(err);
@@ -494,6 +516,10 @@ export default {
         let num2 = num + 1;
         return num2;
       }
+    },
+    // 跳转到MV详情页
+    toMvDetail(id) {
+      this.$router.push("/mv_detail?mvid=" + id);
     },
   },
 };
