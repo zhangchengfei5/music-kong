@@ -43,12 +43,37 @@
         <el-icon color="#e6e6e6" :size="25" @click="goBack"
           ><arrow-left
         /></el-icon>
-        <el-input v-model="song" placeholder="搜索" clearable>
+        <el-input
+          v-model="song"
+          placeholder="搜索"
+          clearable
+          @focus="searchHot"
+        >
           <template #prefix>
             <el-icon class="el-input__icon"><search /></el-icon>
           </template>
         </el-input>
         <el-icon color="#e6e6e6" :size="25"><microphone /></el-icon>
+        <!-- S-热搜列表 -->
+        <!-- <div class="search_detail_box">
+          <div class="header">
+            <span>搜索历史</span>
+            <div class="old_search_box"><span>测试搜索</span></div>
+          </div>
+          <div class="main">
+            <p>热搜榜</p>
+            <div class="hot_list_box">
+              <div class="hot_box">
+                <i>1</i>
+                <div class="title">
+                  <p>哪里都是你<i>HOT</i><span>236152</span></p>
+                  <p>怎么才能忘记你</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div> -->
+        <!-- E-热搜列表 -->
       </div>
       <!-- E-搜索 -->
 
@@ -181,6 +206,7 @@
 import myProgress from "../components/my-progress.vue";
 import server from "../utils/http.js";
 import util from "@/utils/util.js";
+import { mapActions } from "vuex";
 
 export default {
   components: {
@@ -197,10 +223,10 @@ export default {
       },
       // 表单数据
       form: {
-        phone: "",
-        password: "",
-        // phone: "15976523669",
-        // password: "158735677",
+        // phone: "",
+        // password: "",
+        phone: "15976523669",
+        password: "158735677",
       },
       // 表单验证规则
       rules: {
@@ -262,6 +288,7 @@ export default {
     },
   },
   methods: {
+    ...mapActions(["getSearchHot"]),
     // 登录
     login() {
       console.log("点击登录");
@@ -585,6 +612,11 @@ export default {
       songAudio.currentTime = (ct * allDuration) / 100;
     },
 
+    // 点击搜索框获得搜索热搜列表
+    searchHot() {
+      this.getSearchHot();
+    },
+
     // 回到上一页
     goBack() {
       this.$router.go(-1);
@@ -694,6 +726,7 @@ export default {
 .search_wrapper {
   display: flex;
   align-items: center;
+  position: relative;
 }
 .search_wrapper > .el-icon {
   cursor: pointer;
@@ -713,6 +746,16 @@ export default {
 .search_wrapper >>> .el-input__inner:focus {
   border-color: #cc66ff;
 }
+
+/* 搜索详情框 */
+.search_detail_box {
+  background-color: #fff;
+  position: absolute;
+  font-size: 0.14rem;
+  top: 0.4rem;
+  left: 0.25rem;
+}
+
 /* 顶部右边 */
 .close_wrapper {
   display: flex;
