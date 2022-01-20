@@ -3,6 +3,7 @@ import server from "../utils/http.js";
 export default {
   // 获取热搜列表(详细)
   getSearchHot(context) {
+    if (context.state.searchHotList.length > 0) return;
     let params = {};
     let url = "/search/hot/detail";
     server.get(url, params).then((res) => {
@@ -10,8 +11,22 @@ export default {
       if (res.code != 200) {
         this.$message.error("获取热搜列表失败！");
       }
-      console.log("state里的context是：", context);
       context.commit("updateSearchHotList", res.data);
+    });
+  },
+  // 搜索结果
+  getSearchResult(context, inp, type = 1) {
+    let params = {};
+    let url = "/cloudsearch?keywords=" + inp + "&type=" + type;
+    server.get(url, params).then((res) => {
+      console.log("获取搜索结果", res);
+      if (res.code != 200) {
+        this.$message.error("获取搜索结果失败！");
+      }
+      if (type == 1) {
+        context.commit("updateSearchResult", res.result.songs);
+      }
+      context.commit("updateHistory", inp);
     });
   },
 };

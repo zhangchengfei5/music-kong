@@ -98,6 +98,7 @@
                 :class="songIndex % 2 == 0 ? 'dan' : 'shuang'"
                 v-for="(songItem, songIndex) in songList"
                 :key="songItem.id"
+                tabindex="1"
                 @dblclick="playSong(songItem, songIndex)"
               >
                 <td class="list_action">
@@ -690,14 +691,15 @@ export default {
 .shuang {
   background-color: #fff;
 }
+/* 鼠标聚焦列表时 */
+.mfsl_song_list:focus-within {
+  background-color: #e5e5e5;
+}
 /* 列表鼠标移入后 */
 .mfsl_song_list:hover {
   background-color: #f0f1f2;
 }
 
-.mfsl_song_list:focus {
-  background-color: #e5e5e5;
-}
 /* 每一列 */
 .mfsl_song_list td {
   user-select: none;
@@ -755,12 +757,6 @@ export default {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-
-/* .list_name > p {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-} */
 
 .mfsl_song_list .list_singer {
   display: flex;

@@ -98,6 +98,11 @@ const routes = [
         component: () =>
           import("../views/main_menu/create_song_menu/singer_detail"),
       },
+      {
+        path: "/search_detail",
+        name: "search_detail",
+        component: () => import("../views/main_menu/module/search_detail"),
+      },
     ],
   },
 ];

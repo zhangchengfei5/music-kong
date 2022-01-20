@@ -55,24 +55,36 @@
         </el-input>
         <el-icon color="#e6e6e6" :size="25"><microphone /></el-icon>
         <!-- S-热搜列表 -->
-        <!-- <div class="search_detail_box">
-          <div class="header">
+        <div class="search_detail_box">
+          <div class="header" v-if="searchHistory.length > 0">
             <span>搜索历史</span>
-            <div class="old_search_box"><span>测试搜索</span></div>
+            <div class="old_search_box">
+              <span v-for="item in searchHistory" :key="item">{{ item }}</span>
+            </div>
           </div>
           <div class="main">
             <p>热搜榜</p>
             <div class="hot_list_box">
-              <div class="hot_box">
-                <i>1</i>
+              <div
+                class="hot_box"
+                v-for="(item, index) in searchHotList"
+                :key="item"
+                @click="searchHere(item.searchWord)"
+              >
+                <i>{{ index + 1 }}</i>
                 <div class="title">
-                  <p>哪里都是你<i>HOT</i><span>236152</span></p>
-                  <p>怎么才能忘记你</p>
+                  <p>
+                    {{ item.searchWord
+                    }}<img v-if="item.iconUrl" :src="item.iconUrl" alt="" /><em
+                      >{{ item.score }}</em
+                    >
+                  </p>
+                  <span>{{ item.content }}</span>
                 </div>
               </div>
             </div>
           </div>
-        </div> -->
+        </div>
         <!-- E-热搜列表 -->
       </div>
       <!-- E-搜索 -->
@@ -206,7 +218,7 @@
 import myProgress from "../components/my-progress.vue";
 import server from "../utils/http.js";
 import util from "@/utils/util.js";
-import { mapActions } from "vuex";
+import { mapState, mapActions } from "vuex";
 
 export default {
   components: {
@@ -223,10 +235,10 @@ export default {
       },
       // 表单数据
       form: {
-        // phone: "",
-        // password: "",
-        phone: "15976523669",
-        password: "158735677",
+        phone: "",
+        password: "",
+        // phone: "15976523669",
+        // password: "158735677",
       },
       // 表单验证规则
       rules: {
@@ -267,6 +279,7 @@ export default {
     };
   },
   mounted() {
+    this.getSearchHot();
     // 判断是否登录了，如果登陆了就直接赋值用户名和头像
     this.loginStatus = sessionStorage.getItem("loginStatus");
     if (this.loginStatus) {
@@ -278,6 +291,9 @@ export default {
       }
     }
   },
+  computed: {
+    ...mapState(["searchHotList", "searchHistory"]),
+  },
   watch: {
     loginStatus: function (newVal, oldVal) {
       if (newVal) {
@@ -288,7 +304,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions(["getSearchHot"]),
+    ...mapActions(["getSearchHot", "getSearchResult"]),
     // 登录
     login() {
       console.log("点击登录");
@@ -616,6 +632,13 @@ export default {
     searchHot() {
       this.getSearchHot();
     },
+    // 点击热搜列表去搜索
+    searchHere(word) {
+      if (this.song == word) return;
+      this.getSearchResult(word);
+      this.song = word;
+      this.$router.push("/search_detail");
+    },
 
     // 回到上一页
     goBack() {
@@ -749,11 +772,143 @@ export default {
 
 /* 搜索详情框 */
 .search_detail_box {
+  display: none;
   background-color: #fff;
   position: absolute;
+  z-index: 101;
   font-size: 0.14rem;
   top: 0.4rem;
-  left: 0.25rem;
+  left: 0.55rem;
+  width: 3.55rem;
+  height: 4.5rem;
+  padding: 0.1rem;
+  border-radius: 0.1rem;
+  box-shadow: 0 0 1px 1px #b3b3b3;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+/* 聚焦状态显示搜索框 */
+.search_wrapper > .el-input:focus-within ~ .search_detail_box,
+.search_detail_box:hover {
+  display: block;
+}
+/* 滚动条样式 */
+.search_detail_box::-webkit-scrollbar {
+  background-color: #fff;
+  width: 0.05rem;
+}
+/* 设置滚动条的颜色和圆角 */
+.search_detail_box::-webkit-scrollbar-thumb {
+  background-color: #e6e6e6;
+  border-radius: 0.1rem;
+}
+/* 头部搜索历史 */
+.search_detail_box .header span {
+  font-size: 0.15rem;
+}
+/* 搜索历史列表容器 */
+.search_detail_box .header .old_search_box {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 0.1rem 0;
+}
+/* 搜索历史项 */
+.header .old_search_box span {
+  font-size: 0.13rem;
+  border-radius: 0.15rem;
+  border: 1px solid #ccc;
+  padding: 0.05rem 0.1rem;
+  margin-right: 0.1rem;
+  margin-bottom: 0.1rem;
+}
+.header .old_search_box > span:hover {
+  background-color: #e5e5e5;
+  user-select: none;
+  cursor: pointer;
+}
+/* 热搜榜容器 */
+.search_detail_box .main {
+  display: flex;
+  flex-direction: column;
+}
+/* 热搜榜 */
+.search_detail_box .main > p {
+  font-size: 0.15rem;
+  margin-bottom: 0.1rem;
+}
+/* 搜索列表容器 */
+.search_detail_box .main .hot_list_box {
+  display: flex;
+  flex-direction: column;
+}
+/* 搜索项容器 */
+.main .hot_list_box .hot_box {
+  display: flex;
+  align-items: center;
+  padding: 0.08rem 0;
+}
+.main .hot_list_box .hot_box:hover {
+  background-color: #f5f5f5;
+  cursor: pointer;
+  user-select: none;
+}
+/* 搜索标题序号 */
+.hot_list_box .hot_box i {
+  width: 0.4rem;
+  font-size: 0.14rem;
+  font-style: normal;
+  text-align: center;
+  color: #999;
+}
+.hot_box:nth-child(-n + 3) .title p {
+  font-weight: bold;
+  color: #373737;
+}
+.hot_list_box .hot_box:nth-child(1) i {
+  color: #ff0000;
+}
+.hot_list_box .hot_box:nth-child(2) i {
+  color: #ff3333;
+}
+.hot_list_box .hot_box:nth-child(3) i {
+  color: #ff6666;
+}
+/* 搜索标题容器 */
+.hot_list_box .hot_box .title {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* 搜索标题 */
+.hot_box .title p {
+  font-size: 0.14rem;
+  color: #666;
+  margin-bottom: 0.05rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* 搜索标题icon */
+.hot_box .title img {
+  height: 0.13rem;
+  object-fit: contain;
+  margin-left: 0.1rem;
+}
+/* 搜索标题热度 */
+.hot_box .title em {
+  font-size: 0.12rem;
+  font-style: normal;
+  font-weight: normal;
+  color: #999;
+  margin-left: 0.1rem;
+}
+/* 搜索标题简介 */
+.hot_box .title span {
+  color: #999;
+  font-size: 0.12rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 /* 顶部右边 */
