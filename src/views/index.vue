@@ -235,10 +235,10 @@ export default {
       },
       // 表单数据
       form: {
-        phone: "",
-        password: "",
-        // phone: "15976523669",
-        // password: "158735677",
+        // phone: "",
+        // password: "",
+        phone: "15976523669",
+        password: "158735677",
       },
       // 表单验证规则
       rules: {
