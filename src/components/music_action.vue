@@ -46,6 +46,7 @@ export default {
 .music_action_wrapper {
   display: flex;
   align-items: center;
+  margin-right: 0.1rem;
 
   p {
     font-size: 0.14rem;

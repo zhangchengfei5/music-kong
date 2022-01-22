@@ -1,4 +1,5 @@
 import server from "../utils/http.js";
+import { ElMessage } from "element-plus";
 
 export default {
   // 获取热搜列表(详细)
@@ -9,7 +10,9 @@ export default {
     server.get(url, params).then((res) => {
       console.log("获取热搜列表", res);
       if (res.code != 200) {
-        this.$message.error("获取热搜列表失败！");
+        ElMessage.error({
+          message: "获取热搜列表失败！",
+        });
       }
       context.commit("updateSearchHotList", res.data);
     });
@@ -21,10 +24,12 @@ export default {
     server.get(url, params).then((res) => {
       console.log("获取搜索结果", res);
       if (res.code != 200) {
-        this.$message.error("获取搜索结果失败！");
+        ElMessage.error({
+          message: "获取搜索结果失败！",
+        });
       }
       if (type == 1) {
-        context.commit("updateSearchResult", res.result.songs);
+        context.commit("updateSearchResult", res.result);
       }
       context.commit("updateHistory", inp);
     });

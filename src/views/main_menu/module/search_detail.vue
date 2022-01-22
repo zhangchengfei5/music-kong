@@ -1,6 +1,6 @@
 <template>
   <div class="search_detail_wrapper">
-    <div class="header">找到300首单曲</div>
+    <div class="header">找到{{ searchResult.songCount }}首单曲</div>
     <div class="main">
       <el-tabs v-model="activeName">
         <el-tab-pane label="单曲" name="songs">
@@ -13,18 +13,35 @@
               <div class="album">专辑</div>
               <div class="time">时间</div>
             </div>
-            <!-- 歌曲列表表体 -->
+            <!-- 歌曲列表表体
+              v-loading.lock="loading"
+              element-loading-text="加载中..."
+              :style="loadingStyle ? 'height:200px;width:100%;' : ''"
+             -->
             <div class="list_body">
               <!-- 每一列 即 每一首歌 -->
-              <div class="list_box">
+              <div
+                class="list_box"
+                v-for="(item, index) in searchResult.songs"
+                :key="item.id"
+                :class="index % 2 == 0 ? 'dan' : 'shuang'"
+                :tabindex="index"
+              >
                 <div class="title">
-                  <music-action :listIndex="0"></music-action>
-                  <p>孤勇者</p>
-                  <em>《英雄联盟：双城之战》</em>
+                  <music-action :listIndex="index"></music-action>
+                  <p>{{ item.name }}</p>
+                  <em>{{ item.alia[0] }}</em>
                 </div>
-                <div class="singer">陈奕迅</div>
-                <div class="album">孤勇者</div>
-                <div class="time">4:16</div>
+                <div class="singer">
+                  <p v-for="(secItem, secIndex) in item.ar" :key="secItem.id">
+                    <span>
+                      {{ secItem.name }}
+                    </span>
+                    <i v-if="secIndex != item.ar.length - 1">&nbsp;/&nbsp;</i>
+                  </p>
+                </div>
+                <div class="album">{{ item.al ? item.al.name : "" }}</div>
+                <div class="time">{{ formatterSongTime(item.dt) }}</div>
               </div>
             </div>
           </div>
@@ -44,6 +61,8 @@
 
 <script>
 import musicAction from "../../../components/music_action";
+import { mapState } from "vuex";
+import utils from "../../../utils/util";
 
 export default {
   name: "search_detail",
@@ -51,13 +70,40 @@ export default {
   data() {
     return {
       activeName: "songs",
+      loading: true,
+      loadingStyle: true,
     };
   },
+  computed: {
+    ...mapState(["searchResult"]),
+    formatterSongTime: function () {
+      return function (time) {
+        return utils.formatterSongTime(time);
+      };
+    },
+  },
+  // watch: {
+  //   searchResult: function (newVal, oldVal) {
+  //     console.log("老数据", oldVal);
+  //     console.log("老数据", newVal.length);
+  //     if (newVal) {
+  //       console.log("拿到新数据了");
+  //       this.loading = false;
+  //       this.loadingStyle = false;
+  //     }
+  //   },
+  // },
 };
 </script>
 
 <style lang="scss" scoped>
 $theme: #cc66ff;
+// 一行文字，多余的省略
+@mixin oneText {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
 /* 歌单详情最外层容器 */
 .search_detail_wrapper {
   flex: 1;
@@ -130,7 +176,7 @@ $theme: #cc66ff;
       color: #999;
       .title {
         flex: 5;
-
+        padding-right: 0.1rem;
         > i {
           font-style: normal;
           margin-left: 0.8rem;
@@ -138,9 +184,13 @@ $theme: #cc66ff;
       }
       .singer {
         flex: 2;
+        @include oneText;
+        padding-right: 0.1rem;
       }
       .album {
         flex: 3;
+        @include oneText;
+        padding-right: 0.1rem;
       }
       .time {
         flex: 1;
@@ -164,6 +214,11 @@ $theme: #cc66ff;
           align-items: center;
           padding: 0.1rem;
 
+          /* 鼠标聚焦列表时 */
+          &:focus {
+            background-color: #e5e5e5;
+          }
+          /* 鼠标移入列表时 */
           &:hover {
             background-color: #f0f1f2;
             cursor: pointer;
@@ -172,14 +227,16 @@ $theme: #cc66ff;
           .title {
             display: flex;
             align-items: center;
+            overflow: hidden;
             p {
-              margin: 0 0.1rem;
+              margin-right: 0.1rem;
+              color: #666;
+              @include oneText;
             }
             em {
               font-style: normal;
             }
           }
-          .singer,
           .album {
             color: #999;
             &:hover {
@@ -187,9 +244,34 @@ $theme: #cc66ff;
               color: #373737;
             }
           }
+          .singer {
+            color: #999;
+            display: flex;
+            align-items: center;
+            p {
+              span {
+                &:hover {
+                  cursor: pointer;
+                  color: #373737;
+                }
+              }
+              i {
+                font-style: normal;
+                user-select: none;
+              }
+            }
+          }
           .time {
             color: #999;
           }
+        }
+        /* 单数行 */
+        .dan {
+          background-color: #f9f9f9;
+        }
+        /* 双数行 */
+        .shuang {
+          background-color: #fff;
         }
       }
     }

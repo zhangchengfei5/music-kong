@@ -5,7 +5,7 @@ import actions from "./actions";
 const state = {
   searchHotList: [],
   searchHistory: [],
-  searchResult: [],
+  searchResult: {},
 };
 
 export default createStore({

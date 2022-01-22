@@ -718,6 +718,7 @@ export default {
   align-items: center;
   padding: 0.1rem 0.3rem;
   background-color: #cc66ff;
+  position: relative;
   z-index: 100;
 }
 /* 登录容器 */
@@ -775,7 +776,7 @@ export default {
   display: none;
   background-color: #fff;
   position: absolute;
-  z-index: 101;
+  z-index: 2001;
   font-size: 0.14rem;
   top: 0.4rem;
   left: 0.55rem;
@@ -783,7 +784,7 @@ export default {
   height: 4.5rem;
   padding: 0.1rem;
   border-radius: 0.1rem;
-  box-shadow: 0 0 1px 1px #b3b3b3;
+  box-shadow: 0 0 1px 2px #f5f5f5;
   box-sizing: border-box;
   overflow-y: auto;
   overflow-x: hidden;
@@ -929,6 +930,8 @@ export default {
   flex: 1;
   display: flex;
   overflow-y: auto;
+  position: relative;
+  z-index: 99;
 }
 /* 左侧菜单 */
 .home_main_wrapper > .menu_wrapper {
