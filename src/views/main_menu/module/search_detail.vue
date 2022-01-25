@@ -13,11 +13,7 @@
               <div class="album">专辑</div>
               <div class="time">时间</div>
             </div>
-            <!-- 歌曲列表表体
-              v-loading.lock="loading"
-              element-loading-text="加载中..."
-              :style="loadingStyle ? 'height:200px;width:100%;' : ''"
-             -->
+            <!-- 歌曲列表表体 -->
             <div class="list_body">
               <!-- 每一列 即 每一首歌 -->
               <div
@@ -26,6 +22,7 @@
                 :key="item.id"
                 :class="index % 2 == 0 ? 'dan' : 'shuang'"
                 :tabindex="index"
+                @dblclick="listenMusic(item, index)"
               >
                 <div class="title">
                   <music-action :listIndex="index"></music-action>
@@ -61,7 +58,7 @@
 
 <script>
 import musicAction from "../../../components/music_action";
-import { mapState } from "vuex";
+import { mapState, mapActions } from "vuex";
 import utils from "../../../utils/util";
 
 export default {
@@ -82,17 +79,14 @@ export default {
       };
     },
   },
-  // watch: {
-  //   searchResult: function (newVal, oldVal) {
-  //     console.log("老数据", oldVal);
-  //     console.log("老数据", newVal.length);
-  //     if (newVal) {
-  //       console.log("拿到新数据了");
-  //       this.loading = false;
-  //       this.loadingStyle = false;
-  //     }
-  //   },
-  // },
+  methods: {
+    ...mapActions(["getMusicUrl"]),
+    listenMusic(item, index) {
+      // let music = JSON.stringify(item);
+      // let m = encodeURIComponent(music);
+      this.getMusicUrl(item, index);
+    },
+  },
 };
 </script>
 
@@ -169,6 +163,11 @@ $theme: #cc66ff;
     display: flex;
     flex-direction: column;
 
+    .loading {
+      height: 2rem;
+      width: 100%;
+    }
+
     .songs_list {
       display: flex;
       flex-direction: column;
@@ -200,9 +199,7 @@ $theme: #cc66ff;
         display: flex;
         align-items: center;
         user-select: none;
-        border-top: 1px solid #f5f5f5;
-        border-bottom: 1px solid #f5f5f5;
-        padding: 0.1rem;
+        padding: 0.05rem 0.1rem;
       }
       .list_body {
         display: flex;

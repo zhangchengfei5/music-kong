@@ -26,7 +26,7 @@ instance.interceptors.request.use(
       if (cookie != null) {
         config.params.cookie = encodeURIComponent(cookie);
       }
-      config.params.readIP = "192.168.100.127";
+      config.params.readIP = "192.168.100.123";
       config.params = JSON.stringify(config.params);
     }
     return config;

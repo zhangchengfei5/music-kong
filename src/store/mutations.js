@@ -22,4 +22,9 @@ export default {
   updateSearchResult(state, result) {
     state.searchResult = result;
   },
+  updateMusicUrl(state, songData) {
+    state.musicUrl = songData;
+    state.urlReady = !state.urlReady;
+    console.log(state.musicUrl);
+  },
 };

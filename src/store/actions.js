@@ -34,4 +34,30 @@ export default {
       context.commit("updateHistory", inp);
     });
   },
+  // 获取音乐Url
+  getMusicUrl(context, music, index) {
+    let params = {};
+    console.log("传过来的音乐对象", context);
+    let url = "/song/url?id=" + music.id;
+    server.get(url, params).then((res) => {
+      console.log("获取音乐Url", res);
+      if (res.code != 200) {
+        ElMessage.error({
+          message: "获取音乐Url失败！",
+        });
+      }
+      let songData = {};
+      songData.id = music.id;
+      songData.indexId = index;
+      songData.name = music.name;
+      songData.picUrl = music.al.picUrl;
+      songData.singer = music.ar.map((i) => {
+        return i.name;
+      });
+      songData.time = music.dt;
+      songData.list = context.state.searchResult.songs;
+      songData.url = res.data[0].url;
+      context.commit("updateMusicUrl", songData);
+    });
+  },
 };

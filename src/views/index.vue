@@ -48,6 +48,7 @@
           placeholder="搜索"
           clearable
           @focus="searchHot"
+          @keyup.enter="searchInp"
         >
           <template #prefix>
             <el-icon class="el-input__icon"><search /></el-icon>
@@ -57,7 +58,12 @@
         <!-- S-热搜列表 -->
         <div class="search_detail_box">
           <div class="header" v-if="searchHistory.length > 0">
-            <span>搜索历史</span>
+            <div class="delete_box">
+              <span>搜索历史</span>
+              <el-icon color="#999999" @click="deleteSearchHistory"
+                ><delete
+              /></el-icon>
+            </div>
             <div class="old_search_box">
               <span v-for="item in searchHistory" :key="item">{{ item }}</span>
             </div>
@@ -292,7 +298,7 @@ export default {
     }
   },
   computed: {
-    ...mapState(["searchHotList", "searchHistory"]),
+    ...mapState(["searchHotList", "searchHistory", "musicUrl", "urlReady"]),
   },
   watch: {
     loginStatus: function (newVal, oldVal) {
@@ -301,6 +307,10 @@ export default {
       } else {
         console.log("上一个值为：", oldVal);
       }
+    },
+    urlReady: function (newVal, oldVal) {
+      console.log("URL拿到了值变化了", newVal, oldVal);
+      this.playSong(this.musicUrl);
     },
   },
   methods: {
@@ -542,7 +552,7 @@ export default {
       that.formatterSinger(song.singer);
       that.imgUrl.songImg = song.picUrl;
       that.songDuration = util.formatterSongTime(song.time);
-      console.log("这首音乐的时间为：", that.songDuration);
+      console.log("这首音乐的时间为：", that.songDuration, that.songNowList);
       that.getSongUrl(song.id);
     },
 
@@ -632,12 +642,23 @@ export default {
     searchHot() {
       this.getSearchHot();
     },
+    // 按下回车键搜索列表
+    searchInp() {
+      this.getSearchResult(this.song);
+      this.$router.push("/search_detail");
+    },
     // 点击热搜列表去搜索
     searchHere(word) {
       if (this.song == word) return;
       this.getSearchResult(word);
       this.song = word;
       this.$router.push("/search_detail");
+    },
+
+    // 删除搜索历史
+    deleteSearchHistory() {
+      localStorage.removeItem("searchHistory");
+      this.$forceUpdate();
     },
 
     // 回到上一页
@@ -805,8 +826,17 @@ export default {
   border-radius: 0.1rem;
 }
 /* 头部搜索历史 */
-.search_detail_box .header span {
+.search_detail_box .header .delete_box {
+  display: flex;
+  align-items: center;
   font-size: 0.15rem;
+}
+.delete_box > .el-icon {
+  cursor: pointer;
+  margin-left: 0.1rem;
+}
+.delete_box > .el-icon:hover {
+  color: #666;
 }
 /* 搜索历史列表容器 */
 .search_detail_box .header .old_search_box {
@@ -946,6 +976,10 @@ export default {
 /* 隐藏滚动条 */
 .menu_wrapper::-webkit-scrollbar {
   display: none;
+}
+
+.menu_wrapper .el-menu {
+  height: 100%;
 }
 
 /* 点击菜单栏字体变大 */

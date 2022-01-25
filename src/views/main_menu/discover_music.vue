@@ -1098,8 +1098,8 @@ export default {
   background-color: #fff;
   left: 2.25rem;
   right: 0;
-  top: 0.62rem;
-  padding-top: 0.2rem;
+  top: 9.9%;
+  padding-top: 0.15rem;
   padding-bottom: 0.08rem;
 }
 /* 去除标签下面灰色的线 */
