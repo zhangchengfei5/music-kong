@@ -57,31 +57,31 @@ export default {
     margin-right: 0.05rem;
   }
   /* 喜欢和下载两个icon */
-  /deep/ i.iconfont.icon-like {
+  >>> i.iconfont.icon-like {
     font-size: 0.22rem;
     color: #b3b3b3;
   }
-  /deep/ i.iconfont.icon-like:hover {
+  >>> i.iconfont.icon-like:hover {
     cursor: pointer;
     color: #606266;
   }
-  /deep/ i.iconfont.icon-likefill {
+  >>> i.iconfont.icon-likefill {
     font-size: 0.22rem;
     color: #ec4141;
   }
-  /deep/ i.iconfont.icon-likefill:hover {
+  >>> i.iconfont.icon-likefill:hover {
     cursor: pointer;
     color: #d73535;
   }
-  /deep/ i.iconfont.icon-chenggong {
+  >>> i.iconfont.icon-chenggong {
     font-size: 0.18rem;
     color: #507daf;
   }
-  /deep/ i.el-icon.download_icon {
+  >>> i.el-icon.download_icon {
     --font-size: 0.18rem;
     color: #b3b3b3;
   }
-  /deep/ i.el-icon.download_icon:hover {
+  >>> i.el-icon.download_icon:hover {
     cursor: pointer;
     color: #606266;
   }

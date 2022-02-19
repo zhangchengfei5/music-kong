@@ -125,24 +125,24 @@ $theme: #cc66ff;
     height: 100%;
   }
   /* 去除标签下面灰色的线 */
-  /deep/ .el-tabs__nav-wrap::after {
+  ::v-deep .el-tabs__nav-wrap::after {
     display: none;
   }
   /* 标签下划线的颜色 */
-  /deep/ .el-tabs__active-bar {
+  ::v-deep .el-tabs__active-bar {
     background-color: $theme;
   }
   /* 标签字体大小 */
-  /deep/ .el-tabs__item {
+  ::v-deep .el-tabs__item {
     font-size: 0.18rem;
   }
   /* 鼠标移入标签时的文字颜色 */
-  /deep/ .el-tabs__item:hover {
+  ::v-deep .el-tabs__item:hover {
     cursor: pointer;
     color: #000;
   }
   /* 鼠标点击时标签的文字变大 */
-  /deep/ .el-tabs__item.is-active {
+  ::v-deep.el-tabs__item.is-active {
     font-size: 0.22rem;
     font-weight: bold;
     color: #000;

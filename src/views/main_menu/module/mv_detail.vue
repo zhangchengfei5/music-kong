@@ -576,7 +576,7 @@ $theme: #cc66ff;
         font-size: 0.14rem;
         margin-bottom: 0.1rem;
       }
-      /deep/ .el-textarea__inner {
+      ::v-deep .el-textarea__inner {
         &:focus {
           border-color: $theme;
         }

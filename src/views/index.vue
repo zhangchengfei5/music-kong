@@ -978,9 +978,9 @@ export default {
   display: none;
 }
 
-.menu_wrapper .el-menu {
+/* .menu_wrapper .el-menu {
   height: 100%;
-}
+} */
 
 /* 点击菜单栏字体变大 */
 .el-menu > .el-menu-item.is-active:not(:last-child) {

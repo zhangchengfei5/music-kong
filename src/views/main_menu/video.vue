@@ -552,17 +552,17 @@ $theme: #cc66ff;
   }
 
   // 去掉tabborder下面的一整条黑线
-  /deep/ .el-tabs__nav-wrap::after {
+  ::v-deep .el-tabs__nav-wrap::after {
     display: none;
   }
 
   // 标签字体大小
-  /deep/ .el-tabs__item {
+  ::v-deep .el-tabs__item {
     font-size: 0.18rem;
   }
 
   // 选中的tab的颜色
-  /deep/ .el-tabs__item.is-active {
+  ::v-deep .el-tabs__item.is-active {
     color: #000;
     font: {
       weight: bold;
@@ -570,12 +570,12 @@ $theme: #cc66ff;
     }
   }
   // 选中的tab的下划线颜色
-  /deep/ .el-tabs__active-bar {
+  ::v-deep .el-tabs__active-bar {
     background-color: $theme;
   }
 
   // 鼠标移入时字体颜色变化
-  /deep/ .el-tabs__item:hover {
+  ::v-deep .el-tabs__item:hover {
     color: #000;
   }
 

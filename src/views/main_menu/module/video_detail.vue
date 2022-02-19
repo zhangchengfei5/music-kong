@@ -418,7 +418,7 @@ $theme: #cc66ff;
   z-index: 500;
   left: 0;
   right: 0;
-  height: 90%;
+  height: 100%;
   box-sizing: border-box;
   background-color: #fff;
   padding: 0.15rem 0;
@@ -601,7 +601,7 @@ $theme: #cc66ff;
         font-size: 0.14rem;
         margin-bottom: 0.1rem;
       }
-      /deep/ .el-textarea__inner {
+      ::v-deep .el-textarea__inner {
         &:focus {
           border-color: $theme;
         }
